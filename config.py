@@ -23,21 +23,31 @@ APP_TAGLINE = "Autonomous AI Video Creator • Ultra-Fast • Grok Edition"
 APP_VERSION = "2.0.0"
 APP_AUTHOR = "Mizan"
 
+def _get_key_from_env_or_secrets(key_name: str) -> str:
+    val = os.getenv(key_name, "").strip()
+    if not val:
+        try:
+            import streamlit as st
+            val = str(st.secrets.get(key_name, "")).strip()
+        except Exception:
+            pass
+    return val
+
 # API Keys
 def get_gemini_api_key():
-    return os.getenv("GEMINI_API_KEY", "").strip()
+    return _get_key_from_env_or_secrets("GEMINI_API_KEY")
 
 def get_pexels_api_key():
-    return os.getenv("PEXELS_API_KEY", "").strip()
+    return _get_key_from_env_or_secrets("PEXELS_API_KEY")
 
 def get_pixabay_api_key():
-    return os.getenv("PIXABAY_API_KEY", "").strip()
+    return _get_key_from_env_or_secrets("PIXABAY_API_KEY")
 
 def get_google_maps_api_key():
-    return os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
+    return _get_key_from_env_or_secrets("GOOGLE_MAPS_API_KEY")
 
 def get_fal_key():
-    return os.getenv("FAL_KEY", "").strip()
+    return _get_key_from_env_or_secrets("FAL_KEY")
 
 # Visual Styles & Animation Modes
 VISUAL_STYLES = {
