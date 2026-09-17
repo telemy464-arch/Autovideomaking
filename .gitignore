@@ -1,0 +1,33 @@
+# ============================================
+# Git Ignore - Mizan AI Video Studio
+# ============================================
+
+# Security: Never commit private API keys
+.env
+*.env.local
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+
+# Large Rendered Videos & Cache Files
+output/*.mp4
+output/*.wav
+output/*.mp3
+temp/*
+!temp/.gitkeep
+assets/temp/*
+
+# OS & Editor Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

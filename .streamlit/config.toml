@@ -1,0 +1,19 @@
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+address = "localhost"
+port = 8501
+maxUploadSize = 1024
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
+serverAddress = "localhost"
+
+[theme]
+base = "dark"
+primaryColor = "#38bdf8"
+backgroundColor = "#0b0f19"
+secondaryBackgroundColor = "#161e2e"
+textColor = "#f1f5f9"
