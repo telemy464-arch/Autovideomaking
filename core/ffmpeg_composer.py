@@ -95,11 +95,16 @@ def assemble_final_video(
     
     # Check BGM
     has_bgm = bgm_path and Path(bgm_path).exists()
+    print(f"[FFmpeg Composer] has_bgm={has_bgm}, bgm_path={bgm_path}, bgm_volume={bgm_volume}")
     if has_bgm:
         input_args.extend(["-stream_loop", "-1", "-i", str(bgm_path)])
-        audio_filter = f"[1:a]volume=1.0[v_speech];[2:a]volume={bgm_volume}[v_bgm];[v_speech][v_bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+        audio_filter = (
+            f"[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,volume=1.0[v_speech];"
+            f"[2:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,volume={bgm_volume}[v_bgm];"
+            f"[v_speech][v_bgm]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[aout]"
+        )
     else:
-        audio_filter = "[1:a]volume=1.0[aout]"
+        audio_filter = "[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,volume=1.0[aout]"
         
     filter_complex = []
     
@@ -159,16 +164,36 @@ def assemble_final_video(
     res = subprocess.run(cmd_final, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if res.returncode != 0:
         print(f"[FFmpeg Error] {res.stderr}")
-        # Fallback without subtitles if font/subtitle parser encountered syntax issue
-        cmd_fallback = [
-            "ffmpeg", "-y",
-            "-i", str(stitched_video),
-            "-i", str(voice_audio),
-            "-c:v", "copy",
-            "-c:a", "aac",
-            "-shortest",
-            str(output_path)
-        ]
+        # Fallback with audio mix preserved if subtitle overlay encountered issue
+        if has_bgm:
+            cmd_fallback = [
+                "ffmpeg", "-y",
+                "-i", str(stitched_video),
+                "-i", str(voice_audio),
+                "-stream_loop", "-1", "-i", str(bgm_path),
+                "-filter_complex", (
+                    f"[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,volume=1.0[v_speech];"
+                    f"[2:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,volume={bgm_volume}[v_bgm];"
+                    f"[v_speech][v_bgm]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[aout]"
+                ),
+                "-map", "0:v",
+                "-map", "[aout]",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-shortest",
+                str(output_path)
+            ]
+        else:
+            cmd_fallback = [
+                "ffmpeg", "-y",
+                "-i", str(stitched_video),
+                "-i", str(voice_audio),
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-shortest",
+                str(output_path)
+            ]
         subprocess.run(cmd_fallback, check=True)
         
     return output_path

@@ -153,11 +153,13 @@ def compose_full_video(
     
     # 4. Resolve Background Music
     bgm_path = None
-    if bgm_filename and bgm_filename != "কোনো মিউজিক নয়":
-        if Path(bgm_filename).exists():
-            bgm_path = Path(bgm_filename)
+    if bgm_filename and str(bgm_filename).strip() not in ["কোনো মিউজিক নয়", "No Background Music", "None", ""]:
+        p = Path(bgm_filename)
+        if p.exists() and p.is_file():
+            bgm_path = p
         elif (BGM_DIR / bgm_filename).exists():
             bgm_path = BGM_DIR / bgm_filename
+    print(f"[Composer Agent] Resolving BGM: bgm_filename={bgm_filename} -> resolved bgm_path={bgm_path}")
             
     # 5. Assemble Video using FFmpeg Composer
     if progress_callback:

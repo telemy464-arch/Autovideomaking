@@ -285,7 +285,16 @@ with st.sidebar:
         selected_bgm = str(user_bgm_path)
         st.success("✅ Custom background music loaded!")
 
-    bgm_vol = st.slider("Music Volume (Auto-Ducking)", min_value=0.05, max_value=0.30, value=0.12, step=0.01)
+    bgm_vol_percent = st.slider(
+        "Music Volume Level",
+        min_value=5,
+        max_value=80,
+        value=28,
+        step=5,
+        format="%d%%",
+        help="Background music loudness relative to voice. 20%-35% is ideal for clear background ambiance!"
+    )
+    bgm_vol = round(bgm_vol_percent / 100.0, 2)
 
     st.markdown("---")
     st.caption("© 2026 Mizan AI Video Studio • Grok Edition")
