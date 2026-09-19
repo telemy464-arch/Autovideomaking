@@ -25,6 +25,8 @@ output/*.mp3
 temp/*
 !temp/.gitkeep
 assets/temp/*
+bin/
+*.exe
 
 # OS & Editor Files
 .vscode/

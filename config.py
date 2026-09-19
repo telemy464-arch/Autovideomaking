@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
+BIN_DIR = BASE_DIR / "bin"
+if BIN_DIR.exists() and str(BIN_DIR) not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = str(BIN_DIR) + os.pathsep + os.environ.get("PATH", "")
+
 ASSETS_DIR = BASE_DIR / "assets"
 FONTS_DIR = ASSETS_DIR / "fonts"
 BGM_DIR = ASSETS_DIR / "bgm"
@@ -14,7 +18,7 @@ OUTPUT_DIR = BASE_DIR / "output"
 TEMP_DIR = BASE_DIR / "temp"
 
 # Create required directories if they don't exist
-for folder in [OUTPUT_DIR, TEMP_DIR, FONTS_DIR, BGM_DIR, TEMPLATES_DIR]:
+for folder in [OUTPUT_DIR, TEMP_DIR, FONTS_DIR, BGM_DIR, TEMPLATES_DIR, BIN_DIR]:
     folder.mkdir(parents=True, exist_ok=True)
 
 # App Metadata

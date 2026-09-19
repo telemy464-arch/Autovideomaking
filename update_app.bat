@@ -3,6 +3,9 @@ chcp 65001 >nul
 title Update Mizan AI Video Studio
 cd /d "%~dp0"
 
+:: Ensure Git is in PATH
+set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;C:\Program Files\Git\cmd;%PATH%"
+
 echo ========================================================
 echo        ?? Mizan AI Video Studio - Update Manager
 echo ========================================================
