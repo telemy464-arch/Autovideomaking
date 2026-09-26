@@ -1,26 +1,29 @@
 @echo off
+setlocal
 cd /d "%~dp0"
 title Update Mizan AI Video Studio
 
 echo ========================================================
-echo   🔄 Updating Mizan AI Video Studio from GitHub...
+echo   Updating Mizan AI Video Studio from GitHub...
 echo ========================================================
 echo.
 
 where git >nul 2>nul
-if %ERRORLEVEL% equ 0 (
-    echo [1/2] Fetching latest updates from GitHub...
-    git pull origin main
-    if %ERRORLEVEL% neq 0 (
-        echo [WARNING] Git pull encountered a conflict or network issue.
-    ) else (
-        echo [OK] Code updated successfully!
-    )
-) else (
+if %ERRORLEVEL% neq 0 (
     echo [INFO] Git is not found in PATH.
-    echo Please install Git or download the latest update from GitHub.
+    echo Please install Git from https://git-scm.com/
+    goto CheckDeps
 )
 
+echo [1/2] Fetching latest updates from GitHub...
+git pull origin main
+if %ERRORLEVEL% equ 0 (
+    echo [OK] Code updated successfully!
+) else (
+    echo [WARNING] Git pull encountered an issue. Check connection or conflicts.
+)
+
+:CheckDeps
 echo.
 echo [2/2] Checking dependencies...
 if exist "%~dp0runtime\python.exe" (
@@ -31,7 +34,7 @@ if exist "%~dp0runtime\python.exe" (
 
 echo.
 echo ========================================================
-echo   ✅ Update finished! Launching application...
+echo   Update completed! Launching application...
 echo ========================================================
 timeout /t 2 >nul
 if exist "%~dp0MizanAIStudio.exe" (
