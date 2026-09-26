@@ -33,8 +33,11 @@ offline_wheels/
 installers/
 installer_output/
 
-# Compiled Executables (large, platform-specific)
+# Compiled Executables & Archives (too large for GitHub)
 *.exe
+*.zip
+dist/
+release/
 
 # OS & Editor Files
 .vscode/
