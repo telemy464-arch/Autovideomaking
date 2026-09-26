@@ -1,5 +1,5 @@
-﻿[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$ErrorActionPreference = "Continue"
 
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -Path $RootDir
@@ -12,6 +12,18 @@ Write-Host "========================================================" -Foregroun
 Write-Host ""
 
 # ----------------------------------------------------
+# 0. Check Bundled Portable Runtime First
+# ----------------------------------------------------
+if (Test-Path "$RootDir\runtime\python.exe") {
+    Write-Host "🚀 পোর্টেবল পাইথন ইঞ্জিন পাওয়া গেছে! সরাসরি চালু করা হচ্ছে..." -ForegroundColor Green
+    $env:PYTHONIOENCODING = "utf-8"
+    $env:PYTHONUTF8 = "1"
+    Start-Process "http://localhost:8501"
+    & "$RootDir\runtime\python.exe" -m streamlit run "$RootDir\app.py" --theme.base="dark"
+    exit 0
+}
+
+# ----------------------------------------------------
 # 1. Check / Create .env
 # ----------------------------------------------------
 if (-not (Test-Path "$RootDir\.env")) {
@@ -19,7 +31,8 @@ if (-not (Test-Path "$RootDir\.env")) {
         Write-Host "[1/5] 📄 .env কনফিগারেশন ফাইল তৈরি করা হচ্ছে (.env.example থেকে)..." -ForegroundColor Gray
         Copy-Item "$RootDir\.env.example" "$RootDir\.env"
     }
-} else {
+}
+ else {
     Write-Host "[1/5] ✔️ .env কনফিগারেশন ফাইল পাওয়া গেছে।" -ForegroundColor Green
 }
 
@@ -69,17 +82,23 @@ function Find-Python {
 $PythonExe = Find-Python
 
 if (-not $PythonExe) {
-    Write-Host "   ⚠️ পাইথন পাওয়া যায়নি! স্বয়ংক্রিয়ভাবে ডাউনলোড ও ইনস্টল করা হচ্ছে..." -ForegroundColor Yellow
-    $installerUrl = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
+    Write-Host "   ⚠️ পাইথন পাওয়া যায়নি! স্বয়ংক্রিয়ভাবে সেটআপ করা হচ্ছে..." -ForegroundColor Yellow
+    $localInstaller = "$RootDir\installers\python-3.11.9-amd64.exe"
     $tempInstaller = "$env:TEMP\python-3.11.9-amd64.exe"
     
-    Write-Host "   📥 Python 3.11.9 ইনস্টলার ডাউনলোড হচ্ছে (আনুমানিক ২৫ MB)..." -ForegroundColor Cyan
-    try {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest -Uri $installerUrl -OutFile $tempInstaller -UseBasicParsing
-    } catch {
-        Write-Host "   ⚠️ curl দিয়ে পুনরায় চেষ্টা করা হচ্ছে..." -ForegroundColor Yellow
-        & curl.exe -L -o $tempInstaller $installerUrl
+    if (Test-Path $localInstaller) {
+        Write-Host "   📦 প্রিবান্ডলড অফলাইন Python 3.11 ব্যবহার করা হচ্ছে..." -ForegroundColor Cyan
+        $tempInstaller = $localInstaller
+    } else {
+        $installerUrl = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
+        Write-Host "   📥 Python 3.11.9 ইনস্টলার ডাউনলোড হচ্ছে (আনুমানিক ২৫ MB)..." -ForegroundColor Cyan
+        try {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $installerUrl -OutFile $tempInstaller -UseBasicParsing
+        } catch {
+            Write-Host "   ⚠️ curl দিয়ে পুনরায় চেষ্টা করা হচ্ছে..." -ForegroundColor Yellow
+            & curl.exe -L -o $tempInstaller $installerUrl
+        }
     }
     
     Write-Host "   ⚙️ পাইথন ব্যাকগ্রাউন্ডে ইনস্টল হচ্ছে (কোনো অ্যাডমিন পাসওয়ার্ড লাগবে না)..." -ForegroundColor Cyan
@@ -188,7 +207,13 @@ if (-not $isVenvValid) {
     & $PythonExe -m venv "$RootDir\.venv"
     Write-Host "   📥 প্রয়োজনীয় প্যাকেজ ইনস্টল করা হচ্ছে (requirements.txt)..." -ForegroundColor Cyan
     & $VenvPython -m pip install --upgrade pip --quiet
-    & $VenvPip install -r "$RootDir\requirements.txt"
+    $offlineWheels = "$RootDir\offline_wheels"
+    if (Test-Path $offlineWheels) {
+        Write-Host "   📦 অফলাইন প্যাকেজ বান্ডল থেকে দ্রুত ইনস্টল করা হচ্ছে..." -ForegroundColor Cyan
+        & $VenvPip install --no-index --find-links="$offlineWheels" -r "$RootDir\requirements.txt"
+    } else {
+        & $VenvPip install -r "$RootDir\requirements.txt"
+    }
     Write-Host "   ✔️ সকল ডিপেন্ডেন্সি সফলভাবে ইনস্টল হয়েছে!" -ForegroundColor Green
 } else {
     # Check if streamlit is working in venv
@@ -202,7 +227,12 @@ if (-not $isVenvValid) {
     
     if (-not $stCheck) {
         Write-Host "   📥 ডিপেন্ডেন্সি আপডেট/ইনস্টল করা হচ্ছে..." -ForegroundColor Cyan
-        & $VenvPip install -r "$RootDir\requirements.txt"
+        $offlineWheels = "$RootDir\offline_wheels"
+        if (Test-Path $offlineWheels) {
+            & $VenvPip install --no-index --find-links="$offlineWheels" -r "$RootDir\requirements.txt"
+        } else {
+            & $VenvPip install -r "$RootDir\requirements.txt"
+        }
     }
     Write-Host "   ✔️ ভার্চুয়াল এনভায়রনমেন্ট সক্রিয় ও প্রস্তুত।" -ForegroundColor Green
 }
@@ -217,5 +247,7 @@ Write-Host "   URL: http://localhost:8501" -ForegroundColor Yellow
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""
 
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
 Start-Process "http://localhost:8501"
-& $VenvStreamlit run "$RootDir\app.py"
+& $VenvStreamlit run "$RootDir\app.py" --theme.base="dark"

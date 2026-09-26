@@ -31,8 +31,218 @@ st.markdown("""
     }
     
     .stApp {
-        background: #09090b;
-        color: #f4f4f5;
+        background: #09090b !important;
+        color: #f4f4f5 !important;
+    }
+    
+    /* Enforce Dark Theme on Sidebar */
+    [data-testid="stSidebar"], 
+    [data-testid="stSidebar"] > div:first-child,
+    section[data-testid="stSidebar"] {
+        background-color: #0c0e14 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: #f1f5f9 !important;
+    }
+
+    /* Widget Labels & Text Elements (High Contrast) */
+    label, 
+    label p,
+    [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] p,
+    .stWidgetLabel,
+    .stWidgetLabel p,
+    .stMarkdown p,
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] span {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+    }
+    
+    /* Captions & Subtitles */
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p,
+    [data-testid="stCaptionContainer"] span,
+    .stCaption,
+    small {
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
+        font-weight: 500 !important;
+    }
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6,
+    [data-testid="stHeadingWithActionElements"] {
+        color: #f8fafc !important;
+        -webkit-text-fill-color: #f8fafc !important;
+    }
+
+    /* Text Area Styling (Fixes invisible text on white background) */
+    textarea,
+    div[data-baseweb="textarea"],
+    div[data-baseweb="textarea"] textarea {
+        background-color: #111625 !important;
+        color: #ffffff !important;
+        border: 1px solid #2d3748 !important;
+        border-radius: 12px !important;
+        font-size: 0.96rem !important;
+        line-height: 1.6 !important;
+        -webkit-text-fill-color: #ffffff !important;
+        caret-color: #38bdf8 !important;
+    }
+
+    textarea::placeholder,
+    input::placeholder {
+        color: #64748b !important;
+        -webkit-text-fill-color: #64748b !important;
+    }
+    
+    textarea:focus,
+    div[data-baseweb="textarea"]:focus-within {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
+        background-color: #151b2e !important;
+    }
+
+    /* Text Inputs (Password, Text, Number) */
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    div[data-baseweb="input"],
+    div[data-baseweb="input"] input {
+        background-color: #111625 !important;
+        color: #ffffff !important;
+        border: 1px solid #2d3748 !important;
+        border-radius: 10px !important;
+        -webkit-text-fill-color: #ffffff !important;
+        caret-color: #38bdf8 !important;
+    }
+    
+    input:focus,
+    div[data-baseweb="input"]:focus-within {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
+    }
+
+    /* Selectbox & Dropdown Menus */
+    div[data-baseweb="select"] > div {
+        background-color: #111625 !important;
+        border: 1px solid #2d3748 !important;
+        border-radius: 10px !important;
+        color: #ffffff !important;
+    }
+    
+    div[data-baseweb="select"] * {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+    
+    ul[role="listbox"], li[role="option"] {
+        background-color: #111625 !important;
+        color: #ffffff !important;
+    }
+    
+    li[role="option"]:hover, li[aria-selected="true"] {
+        background-color: #1e293b !important;
+        color: #38bdf8 !important;
+    }
+
+    /* File Uploader Container & Button */
+    [data-testid="stFileUploader"] {
+        background-color: #111625 !important;
+        border: 1px dashed rgba(56, 189, 248, 0.4) !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+    }
+    
+    [data-testid="stFileUploader"] section {
+        background-color: transparent !important;
+    }
+    
+    [data-testid="stFileUploader"] * {
+        color: #e2e8f0 !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
+    }
+    
+    [data-testid="stFileUploader"] button {
+        background: #1e293b !important;
+        color: #38bdf8 !important;
+        border: 1px solid rgba(56, 189, 248, 0.3) !important;
+        font-weight: 600 !important;
+        -webkit-text-fill-color: #38bdf8 !important;
+    }
+
+    /* Primary & Standard Buttons */
+    .stButton>button, 
+    .stDownloadButton>button {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #334155 !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        padding: 8px 18px !important;
+        transition: all 0.2s ease-in-out !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    .stButton>button *, 
+    .stDownloadButton>button * {
+        color: inherit !important;
+        -webkit-text-fill-color: inherit !important;
+    }
+    
+    .stButton>button:hover,
+    .stDownloadButton>button:hover {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+        transform: translateY(-1px) !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+    
+    .stButton>button[kind="primary"],
+    .stDownloadButton>button[kind="primary"] {
+        background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #38bdf8 !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    .stButton>button[kind="secondary"],
+    .stDownloadButton>button[kind="secondary"] {
+        background: #1e293b !important;
+        color: #f1f5f9 !important;
+        border: 1px solid #334155 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+    }
+
+    /* Radio buttons & Sliders */
+    [data-testid="stRadio"] label,
+    [data-testid="stSlider"] label {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+    }
+
+    /* Expanders */
+    [data-testid="stExpander"] details {
+        background: #11141f !important;
+        border: 1px solid #27272a !important;
+        border-radius: 12px !important;
+    }
+    
+    [data-testid="stExpander"] summary {
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+    }
+    
+    [data-testid="stExpander"] summary:hover {
+        color: #38bdf8 !important;
     }
     
     /* Grok Header Card */
@@ -123,14 +333,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
     
-    /* Primary buttons */
-    .stButton>button {
-        border-radius: 12px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        transition: all 0.2s ease-in-out;
-    }
-    
     /* Tabs styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
@@ -152,6 +354,100 @@ st.markdown("""
         background: rgba(56, 189, 248, 0.12) !important;
         color: #38bdf8 !important;
         border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    }
+    
+    /* Contact Card & Buttons */
+    .contact-card {
+        background: linear-gradient(180deg, #141419 0%, #0d0d11 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 16px;
+        margin-top: 10px;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    
+    .contact-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 11px 16px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        text-decoration: none !important;
+        transition: all 0.25s ease-in-out;
+        box-sizing: border-box;
+    }
+    
+    .contact-btn-wa {
+        background: rgba(37, 211, 102, 0.12);
+        color: #25D366 !important;
+        border: 1px solid rgba(37, 211, 102, 0.3);
+    }
+    .contact-btn-wa:hover {
+        background: #25D366;
+        color: #0c0c0f !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35);
+    }
+    
+    .contact-btn-fb {
+        background: rgba(24, 119, 242, 0.12);
+        color: #3b82f6 !important;
+        border: 1px solid rgba(24, 119, 242, 0.3);
+    }
+    .contact-btn-fb:hover {
+        background: #1877F2;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(24, 119, 242, 0.35);
+    }
+    
+    .contact-btn-tg {
+        background: rgba(0, 136, 204, 0.12);
+        color: #38bdf8 !important;
+        border: 1px solid rgba(0, 136, 204, 0.3);
+    }
+    .contact-btn-tg:hover {
+        background: #0088cc;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 136, 204, 0.35);
+    }
+    
+    /* Footer Bar */
+    .grok-footer {
+        background: linear-gradient(180deg, #111116 0%, #0c0c0f 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 36px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .grok-footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+    
+    .grok-footer-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -295,6 +591,37 @@ with st.sidebar:
         help="Background music loudness relative to voice. 20%-35% is ideal for clear background ambiance!"
     )
     bgm_vol = round(bgm_vol_percent / 100.0, 2)
+
+    st.markdown("---")
+    st.markdown("### 📬 Contact & Support")
+    st.markdown("""
+    <div class="contact-card">
+        <a href="https://wa.me/8801737929107" target="_blank" rel="noopener noreferrer" class="contact-btn contact-btn-wa">
+            💬 WhatsApp
+        </a>
+        <a href="https://www.facebook.com/Agpt2" target="_blank" rel="noopener noreferrer" class="contact-btn contact-btn-fb">
+            🔵 Facebook
+        </a>
+        <a href="https://t.me/aibymizan" target="_blank" rel="noopener noreferrer" class="contact-btn contact-btn-tg">
+            ✈️ Telegram Group For More Updates
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.expander("📝 Direct Contact Form", expanded=False):
+        st.caption("আপনার বার্তা লিখে সরাসরি যোগাযোগ করুন:")
+        cf_user_name = st.text_input("আপনার নাম (Name):", key="cf_sidebar_name", placeholder="আপনার নাম...")
+        cf_user_msg = st.text_area("আপনার বার্তা (Message):", key="cf_sidebar_msg", placeholder="কী জানতে বা জানাতে চান লিখুন...", height=80)
+        if st.button("🚀 WhatsApp এ পাঠান", use_container_width=True, key="cf_sidebar_btn"):
+            if cf_user_msg.strip():
+                import urllib.parse
+                sender_label = cf_user_name.strip() if cf_user_name.strip() else "একজন ব্যবহারকারী"
+                direct_msg = f"হ্যালো মিজান ভাই, আমি {sender_label}।\n\nবার্তা:\n{cf_user_msg.strip()}"
+                enc_msg = urllib.parse.quote(direct_msg)
+                st.success("✅ নিচে ক্লিক করে সরাসরি চ্যাট ওপেন করুন:")
+                st.link_button("📲 চ্যাট শুরু করতে ক্লিক করুন", f"https://wa.me/8801737929107?text={enc_msg}", use_container_width=True)
+            else:
+                st.warning("দয়া করে বার্তাটি লিখুন।")
 
     st.markdown("---")
     st.caption("© 2026 Mizan AI Video Studio • Grok Edition")
@@ -805,3 +1132,31 @@ with tab_gallery:
                 s_mb = vpath.stat().st_size / (1024 * 1024)
                 m_time = time.strftime('%Y-%m-%d %H:%M', time.localtime(vpath.stat().st_mtime))
                 st.write(f"• **{vpath.name}** ({s_mb:.1f} MB) — *{m_time}*")
+
+# -------------------------------------------------------------
+# Global Footer Card with Contact & Support
+# -------------------------------------------------------------
+st.markdown("""
+<div class="grok-footer">
+    <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-bottom: 6px;">
+        🎬 Mizan AI Video Studio • Grok Edition
+    </div>
+    <div style="font-size: 0.88rem; color: #a1a1aa; margin-bottom: 14px;">
+        স্বয়ংক্রিয় বাংলা ভিডিও তৈরির সহজতম ইঞ্জিন | নির্মাতা: <strong>Mizan</strong>
+    </div>
+    <div class="grok-footer-links">
+        <a href="https://wa.me/8801737929107" target="_blank" rel="noopener noreferrer" class="grok-footer-link contact-btn-wa">
+            💬 WhatsApp
+        </a>
+        <a href="https://www.facebook.com/Agpt2" target="_blank" rel="noopener noreferrer" class="grok-footer-link contact-btn-fb">
+            🔵 Facebook
+        </a>
+        <a href="https://t.me/aibymizan" target="_blank" rel="noopener noreferrer" class="grok-footer-link contact-btn-tg">
+            ✈️ Telegram Group For More Updates
+        </a>
+    </div>
+    <div style="font-size: 0.78rem; color: #52525b; margin-top: 16px;">
+        © 2026 Mizan AI Video Studio. All rights reserved.
+    </div>
+</div>
+""", unsafe_allow_html=True)

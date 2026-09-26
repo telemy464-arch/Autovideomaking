@@ -25,7 +25,15 @@ output/*.mp3
 temp/*
 !temp/.gitkeep
 assets/temp/*
+
+# Large Binary / Offline Packages (too big for GitHub)
 bin/
+runtime/
+offline_wheels/
+installers/
+installer_output/
+
+# Compiled Executables (large, platform-specific)
 *.exe
 
 # OS & Editor Files
