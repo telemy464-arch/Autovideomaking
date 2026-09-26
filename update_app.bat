@@ -36,7 +36,7 @@ echo.
 echo ========================================================
 echo   Update completed! Launching application...
 echo ========================================================
-timeout /t 2 >nul
+ping 127.0.0.1 -n 3 >nul
 if exist "%~dp0MizanAIStudio.exe" (
     start "" "%~dp0MizanAIStudio.exe"
 ) else (
