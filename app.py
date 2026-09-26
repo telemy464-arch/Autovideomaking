@@ -1,11 +1,42 @@
 import streamlit as st
 import os
 import time
+import threading
 from pathlib import Path
 from dotenv import load_dotenv, set_key
+import requests as _req
 
 # Load environment variables
 load_dotenv(override=True)
+
+# ── Live Global User / Usage Tracker ──────────────────────────────────────────
+def _get_live_count() -> int:
+    """Increment and fetch global user launch / visit count."""
+    import re
+    # Tracker 1: visitor-badge
+    try:
+        r = _req.get("https://visitor-badge.laobi.icu/badge?page_id=mizanai.video.studio", timeout=3.5)
+        if r.status_code == 200:
+            nums = re.findall(r'>(\d+)<', r.text)
+            if nums:
+                return int(nums[0])
+    except Exception:
+        pass
+
+    # Tracker 2: komarev fallback
+    try:
+        r = _req.get("https://komarev.com/ghpvc/?username=mizanai-video-studio", timeout=3.5)
+        if r.status_code == 200:
+            nums = re.findall(r'>(\d+)<', r.text)
+            if nums:
+                return int(nums[0])
+    except Exception:
+        pass
+    return 1
+
+# Fire-and-fetch: only once per browser session
+if "visitor_count" not in st.session_state or st.session_state["visitor_count"] <= 0:
+    st.session_state["visitor_count"] = _get_live_count()
 
 import config
 from agents.topic_agent import generate_topics
@@ -449,6 +480,65 @@ st.markdown("""
         text-decoration: none !important;
         transition: all 0.2s ease;
     }
+
+    /* Live User Counter Card */
+    .user-counter-card {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 8px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+    .user-counter-card .uc-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #38bdf8 !important;
+        -webkit-text-fill-color: #38bdf8 !important;
+        margin-bottom: 4px;
+    }
+    .user-counter-card .uc-number {
+        font-size: 2.3rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, #ffffff 30%, #38bdf8 80%, #c084fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.1;
+        margin: 2px 0;
+    }
+    .user-counter-card .uc-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #f1f5f9 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+    }
+    .user-counter-card .uc-sub {
+        font-size: 0.7rem;
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
+        margin-top: 3px;
+    }
+    .uc-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #22c55e;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+        animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(0.7); }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -470,8 +560,26 @@ st.markdown(f"""
 
 # Sidebar Configuration
 with st.sidebar:
+    # ── Live Visitor Counter ─────────────────────────────────────
+    _vc = st.session_state.get("visitor_count", 0)
+    _vc_display = f"{_vc:,}" if _vc > 0 else "১"
+    st.markdown(f"""
+    <div class="user-counter-card">
+        <div class="uc-top">
+            <span class="uc-dot"></span> LIVE SYSTEM ACTIVE
+        </div>
+        <div class="uc-number">{_vc_display}</div>
+        <div class="uc-label">মোট সক্রিয় ব্যবহারকারী / ইউজার</div>
+        <div class="uc-sub">রিয়েলটাইম ক্লাউড ট্র্যাকিং দ্বারা সংযুক্ত</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🔄 লাইভ কাউন্টার আপডেট করুন", use_container_width=True, key="btn_refresh_counter"):
+        st.session_state["visitor_count"] = _get_live_count()
+        st.rerun()
+
     st.markdown("### ⚙️ Engine Settings")
-    
+
     with st.expander("🔑 API Credentials", expanded=False):
         st.caption("Provide API keys for unlimited high-quality generation:")
         gemini_key = st.text_input("Google Gemini API Key", value=config.get_gemini_api_key(), type="password")
