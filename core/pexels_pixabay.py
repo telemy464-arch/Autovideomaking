@@ -2,6 +2,7 @@ import os
 import requests
 import hashlib
 from pathlib import Path
+import config
 from config import TEMP_DIR, TEMPLATES_DIR, get_pexels_api_key, get_pixabay_api_key
 
 CACHE_DIR = TEMP_DIR / "video_cache"

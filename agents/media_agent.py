@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import config
 from core.pexels_pixabay import get_media_clip
 from config import get_pexels_api_key, get_pixabay_api_key
 
