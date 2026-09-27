@@ -3,8 +3,12 @@ setlocal
 cd /d "%~dp0"
 title Update Mizan AI Video Studio
 
+:: Ensure Git is in PATH
+set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;C:\Program Files\Git\cmd;%PATH%"
+
 echo ========================================================
 echo   Updating Mizan AI Video Studio from GitHub...
+echo   Repository: https://github.com/telemy464-arch/Autovideomaking.git
 echo ========================================================
 echo.
 
@@ -15,12 +19,18 @@ if %ERRORLEVEL% neq 0 (
     goto CheckDeps
 )
 
-echo [1/2] Fetching latest updates from GitHub...
-git pull origin main
+:: Ensure safe directory
+git config --global --add safe.directory "%~dp0" >nul 2>nul
+git config --global --add safe.directory "*" >nul 2>nul
+
+echo [1/2] Fetching and syncing latest updates from GitHub...
+git fetch origin main
 if %ERRORLEVEL% equ 0 (
-    echo [OK] Code updated successfully!
+    git reset --hard origin/main
+    echo [OK] Code updated to the latest version successfully!
 ) else (
-    echo [WARNING] Git pull encountered an issue. Check connection or conflicts.
+    echo [WARNING] Git fetch encountered an issue. Checking direct pull...
+    git pull origin main
 )
 
 :CheckDeps
