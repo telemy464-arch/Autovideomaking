@@ -32,8 +32,9 @@ def prepare_clip(
         "-t", str(target_duration),
         "-vf", vf,
         "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-crf", "22",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-threads", "0",
         "-an",
         str(output_clip)
     ]
@@ -153,8 +154,9 @@ def assemble_final_video(
         "-map", map_video,
         "-map", "[aout]",
         "-c:v", "libx264",
-        "-preset", "fast",
-        "-crf", "20",
+        "-preset", "veryfast",
+        "-crf", "22",
+        "-threads", "0",
         "-c:a", "aac",
         "-b:a", "192k",
         "-shortest",
