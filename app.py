@@ -580,45 +580,24 @@ with st.sidebar:
 
     st.markdown("### ⚙️ Engine Settings")
 
-    with st.expander("🔑 API Credentials", expanded=False):
-        st.caption("Provide API keys for unlimited high-quality generation:")
-        gemini_key = st.text_input("Google Gemini API Key", value=config.get_gemini_api_key(), type="password")
-        pexels_key = st.text_input("Pexels API Key", value=config.get_pexels_api_key(), type="password")
-        pixabay_key = st.text_input("Pixabay API Key", value=config.get_pixabay_api_key(), type="password")
-        google_maps_key = st.text_input(
-            "Google Maps / Earth API Key (Optional)",
-            value=config.get_google_maps_api_key(),
-            type="password",
-            help="Optional for Google Maps Satellite tiles. Free high-res Esri & OSM global satellite imagery is active automatically!"
-        )
-        fal_key = st.text_input(
-            "Fal.ai API Key (AI Video & FLUX Generator)",
-            value=config.get_fal_key(),
-            type="password",
-            help="When stock video cannot match a scene, Fal.ai automatically generates custom 4K AI video clips!"
-        )
-        
-        if st.button("💾 Save API Credentials", use_container_width=True):
-            env_path = config.BASE_DIR / ".env"
-            set_key(env_path, "GEMINI_API_KEY", gemini_key.strip())
-            set_key(env_path, "PEXELS_API_KEY", pexels_key.strip())
-            set_key(env_path, "PIXABAY_API_KEY", pixabay_key.strip())
-            set_key(env_path, "GOOGLE_MAPS_API_KEY", google_maps_key.strip())
-            set_key(env_path, "FAL_KEY", fal_key.strip())
-            os.environ["GEMINI_API_KEY"] = gemini_key.strip()
-            os.environ["PEXELS_API_KEY"] = pexels_key.strip()
-            os.environ["PIXABAY_API_KEY"] = pixabay_key.strip()
-            os.environ["GOOGLE_MAPS_API_KEY"] = google_maps_key.strip()
-            os.environ["FAL_KEY"] = fal_key.strip()
-            st.success("API Credentials saved successfully!")
-            st.rerun()
-            
-        c1, c2, c3, c4, c5 = st.columns(5)
-        with c1: st.caption("Gemini: " + ("🟢" if gemini_key else "⚪"))
-        with c2: st.caption("Pexels: " + ("🟢" if pexels_key else "⚪"))
-        with c3: st.caption("Pixabay: " + ("🟢" if pixabay_key else "⚪"))
-        with c4: st.caption("Maps: " + ("🟢" if google_maps_key else "🟡 Free"))
-        with c5: st.caption("Fal.ai: " + ("🟢" if fal_key else "⚪"))
+    # Built-in Engine Credentials (hidden from user)
+    gemini_key = config.get_gemini_api_key()
+    pexels_key = config.get_pexels_api_key()
+    pixabay_key = config.get_pixabay_api_key()
+    google_maps_key = config.get_google_maps_api_key()
+    fal_key = config.get_fal_key()
+
+    st.markdown("""
+    <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e;"></span>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #22c55e; letter-spacing: 0.05em;">PREMIUM AI ENGINE ACTIVE</span>
+        </div>
+        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+            Gemini AI • 4K Pexels/Pixabay • Ultra HD মিডিয়া রেডি
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("### 🎨 Visual Style & Animation Mode")
