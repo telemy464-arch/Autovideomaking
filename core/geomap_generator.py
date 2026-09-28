@@ -140,7 +140,7 @@ def fetch_satellite_imagery(
             f"&bboxSR=4326&imageSR=4326&size={width},{height}&f=image"
         )
         req = urllib.request.Request(esri_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0)"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=4) as resp:
             content = resp.read()
             if len(content) > 10000:
                 sat_img_path.write_bytes(content)
@@ -184,17 +184,18 @@ def generate_geomap_clip(
     display_title = f"TARGET: {target_name.upper()}"
     coords_text = f"LAT: {abs(lat):.2f}° {lat_dir}  |  LON: {abs(lon):.2f}° {lon_dir}  |  SATELLITE 3D"
 
-    escaped_title = display_title.replace(":", "\:").replace("'", "")
-    escaped_coords = coords_text.replace(":", "\:").replace("'", "")
+    escaped_title = display_title.replace(":", r"\:").replace("'", "")
+    escaped_coords = coords_text.replace(":", r"\:").replace("'", "")
 
     total_frames = int(duration * 25)
     zoom_step = 0.0016
+    font_file = (config.FONTS_DIR / "NirmalaB.ttf").resolve().as_posix().replace(":", r"\:")
 
     vf_filters = [
         f"scale={out_w}:{out_h}:force_original_aspect_ratio=increase,crop={out_w}:{out_h}",
         f"zoompan=z='min(zoom+{zoom_step},1.38)':d={total_frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={out_w}x{out_h}:fps=25",
-        f"drawtext=text='{escaped_title}':fontcolor=white:fontsize=38:x=(w-text_w)/2:y=130:box=1:boxcolor=black@0.65:boxborderw=10",
-        f"drawtext=text='{escaped_coords}':fontcolor=0x00FFCC:fontsize=22:x=(w-text_w)/2:y=195:box=1:boxcolor=black@0.65:boxborderw=6",
+        f"drawtext=fontfile='{font_file}':text='{escaped_title}':fontcolor=white:fontsize=38:x=(w-text_w)/2:y=130:box=1:boxcolor=black@0.65:boxborderw=10",
+        f"drawtext=fontfile='{font_file}':text='{escaped_coords}':fontcolor=0x00FFCC:fontsize=22:x=(w-text_w)/2:y=195:box=1:boxcolor=black@0.65:boxborderw=6",
         "format=yuv420p"
     ]
     vf_string = ",".join(vf_filters)
