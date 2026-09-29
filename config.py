@@ -139,6 +139,8 @@ BGM_CATEGORIES = {
         ("Focus Study (মনোযোগ ও পড়াশোনা)", "educational_focus_study.mp3"),
     ],
     "👻 Horror (ভৌতিক ও রহস্যময়)": [
+        ("Azam Ali - Mystic Chant (আজম আলী - মায়াবী ভুতুড়ে সুর)", "horror_azam_ali_mystic_haunt.mp3"),
+        ("Azam Ali - Screaming Fear (আজম আলী - ভুতুড়ে চিৎকার ও ভয়)", "horror_screaming_chills.mp3"),
         ("Dark Suspense (গভীর ভয় ও সাসপেন্স)", "horror_dark_suspense.mp3"),
         ("Creepy Ambience (ভুতুড়ে পরিবেশ)", "horror_creepy_ambience.mp3"),
         ("Spooky Nightmare (আতঙ্ক ও দুঃস্বপ্ন)", "horror_spooky_nightmare.mp3"),
