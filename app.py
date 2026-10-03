@@ -43,7 +43,7 @@ from agents.topic_agent import generate_topics
 from agents.script_agent import generate_and_check_script, auto_segment_script_into_scenes
 from agents.media_agent import collect_media_for_scenes
 from agents.composer_agent import compose_full_video
-from core.tts_engine import VOICES
+from core.tts_engine import VOICES, fetch_elevenlabs_voices, generate_speech
 
 # Page Configuration
 st.set_page_config(
@@ -584,6 +584,7 @@ with st.sidebar:
     gemini_key = config.get_gemini_api_key()
     pexels_key = config.get_pexels_api_key()
     pixabay_key = config.get_pixabay_api_key()
+    eleven_key = config.get_elevenlabs_api_key()
     google_maps_key = config.get_google_maps_api_key()
     fal_key = config.get_fal_key()
 
@@ -594,7 +595,7 @@ with st.sidebar:
             <span style="font-size: 0.8rem; font-weight: 700; color: #22c55e; letter-spacing: 0.05em;">PREMIUM AI ENGINE ACTIVE</span>
         </div>
         <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
-            Gemini AI • 4K Pexels/Pixabay • Ultra HD মিডিয়া রেডি
+            Gemini AI • ElevenLabs AI Voice • 4K Pexels/Pixabay • Ultra HD মিডিয়া রেডি
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -612,23 +613,102 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 🎙️ Voice & Audio Synthesis")
-    voice_filter = st.radio("Voice Language Filter:", ["All Voices", "🇧🇩 Bengali", "🇺🇸/🇬🇧 English"], horizontal=True)
-    
-    if voice_filter == "🇧🇩 Bengali":
-        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("bn-")}
-    elif voice_filter == "🇺🇸/🇬🇧 English":
-        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("en-")}
+    tts_engine_choice = st.radio(
+        "TTS Engine:",
+        ["🌐 Edge-TTS (Free, Fast & Unlimited)", "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)"],
+        index=0,
+        horizontal=True
+    )
+
+    if tts_engine_choice == "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)":
+        selected_tts_engine = "elevenlabs"
+        st.info("💎 **ElevenLabs Studio AI Voice Selected** — ফিল্ম-কোয়ালিটি হিউম্যান ভয়েস, প্রাকৃতিক অনুভূতি ও জীবন্ত উচ্চারণ।")
+        
+        eleven_lang_choice = st.radio("ভয়েস ও স্ক্রিপ্টের ভাষা:", ["🇧🇩 Bengali (বাংলা)", "🇺🇸 English"], horizontal=True)
+        is_voice_english = (eleven_lang_choice == "🇺🇸 English")
+        
+        selected_eleven_model_label = st.selectbox(
+            "ElevenLabs AI Model:",
+            options=list(config.ELEVEN_MODELS.keys()),
+            index=0,
+            help="Eleven Multilingual v2 বাংলা 🇧🇩 এবং ইংরেজি উভয় ভাষার জন্যই সর্বোত্তম কোয়ালিটি দেয়।"
+        )
+        selected_eleven_model = config.ELEVEN_MODELS[selected_eleven_model_label]
+        
+        c_v1, c_v2 = st.columns([3, 1])
+        with c_v1:
+            eleven_voices_dict = fetch_elevenlabs_voices(api_key=eleven_key)
+            selected_voice_label = st.selectbox(
+                "Select ElevenLabs Voice:",
+                options=list(eleven_voices_dict.keys()),
+                index=0
+            )
+            selected_voice_code = eleven_voices_dict[selected_voice_label]
+        with c_v2:
+            st.write("")
+            st.write("")
+            if st.button("🔄 Refresh", help="আপনার ElevenLabs অ্যাকাউন্টের ভয়েস রিফ্রেশ করুন"):
+                st.rerun()
+
+        col_st1, col_st2 = st.columns(2)
+        with col_st1:
+            eleven_stability = st.slider(
+                "Voice Stability (স্থিরতা)", 0.0, 1.0, 0.50, 0.05, format="%.2f",
+                help="কম ভ্যালু = বেশি নাটকীয়তা ও আবেগ, বেশি ভ্যালু = স্থির ও পেশাদার।"
+            )
+        with col_st2:
+            eleven_similarity = st.slider(
+                "Clarity / Similarity Boost (স্পষ্টতা)", 0.0, 1.0, 0.75, 0.05, format="%.2f",
+                help="ভয়েসের স্পষ্টতা ও আসল টোনের সাথে মিল।"
+            )
+
+        c_prev1, c_prev2 = st.columns([2, 3])
+        with c_prev1:
+            if st.button("🔊 Test ElevenLabs Voice", use_container_width=True):
+                with st.spinner("ভয়েস অডিও তৈরি হচ্ছে..."):
+                    test_phrase = "Welcome to today's video." if is_voice_english else "আজকের ভিডিওতে আপনাদের সবাইকে স্বাগতম।"
+                    try:
+                        prev_res = generate_speech(
+                            text=test_phrase,
+                            output_filename="eleven_sample_preview.mp3",
+                            voice=selected_voice_code,
+                            engine="elevenlabs",
+                            eleven_model=selected_eleven_model,
+                            eleven_api_key=eleven_key,
+                            eleven_stability=eleven_stability,
+                            eleven_similarity=eleven_similarity
+                        )
+                        st.audio(prev_res["audio_path"])
+                    except Exception as err:
+                        st.error(f"Voice preview error: {err}")
+        with c_prev2:
+            st.caption("💡 ফ্রি API কি-তে প্রতি মাসে ১০,০০০ অক্ষর ফ্রি থাকে। কোটা শেষ হলেও ভিডিও আটকে থাকবে না, স্বয়ংক্রিয়ভাবে Edge-TTS দিয়ে সম্পন্ন হবে।")
+
+        tts_rate = "+0%"
+        tts_pitch = "+0Hz"
     else:
-        filtered_voices = config.VOICES
+        selected_tts_engine = "edge-tts"
+        selected_eleven_model = "eleven_multilingual_v2"
+        eleven_stability = 0.5
+        eleven_similarity = 0.75
 
-    selected_voice_label = st.selectbox("Select Voice:", options=list(filtered_voices.keys()), index=0)
-    selected_voice_code = filtered_voices[selected_voice_label]
+        voice_filter = st.radio("Voice Language Filter:", ["All Voices", "🇧🇩 Bengali", "🇺🇸/🇬🇧 English"], horizontal=True)
+        if voice_filter == "🇧🇩 Bengali":
+            filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("bn-")}
+        elif voice_filter == "🇺🇸/🇬🇧 English":
+            filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("en-")}
+        else:
+            filtered_voices = config.VOICES
 
-    speed_val = st.slider("Speech Speed Rate", min_value=-20, max_value=50, value=0, step=5, format="%d%%")
-    tts_rate = f"{speed_val:+d}%"
+        selected_voice_label = st.selectbox("Select Voice:", options=list(filtered_voices.keys()), index=0)
+        selected_voice_code = filtered_voices[selected_voice_label]
+        is_voice_english = selected_voice_code.startswith("en-")
 
-    pitch_val = st.slider("Speech Tone / Pitch", min_value=-10, max_value=10, value=0, step=1, format="%dHz")
-    tts_pitch = f"{pitch_val:+d}Hz"
+        speed_val = st.slider("Speech Speed Rate", min_value=-20, max_value=50, value=0, step=5, format="%d%%")
+        tts_rate = f"{speed_val:+d}%"
+
+        pitch_val = st.slider("Speech Tone / Pitch", min_value=-10, max_value=10, value=0, step=1, format="%dHz")
+        tts_pitch = f"{pitch_val:+d}Hz"
 
     st.markdown("---")
     st.markdown("### 📐 Video Dimensions")
@@ -767,7 +847,7 @@ with tab_studio:
                     seg_scenes = auto_segment_script_into_scenes(
                         script_text=custom_script_text,
                         api_key=gemini_key,
-                        is_english=selected_voice_code.startswith("en-"),
+                        is_english=is_voice_english,
                         visual_style=selected_style_id
                     )
                     if seg_scenes:
@@ -880,7 +960,7 @@ with tab_studio:
     start_custom_gen = st.button("🚀 Render Full Video (Custom Script & Style)", type="primary", use_container_width=True)
 
     if start_custom_gen:
-        is_eng = selected_voice_code.startswith("en-")
+        is_eng = is_voice_english
         if "parsed_scenes" in st.session_state and st.session_state["parsed_scenes"]:
             constructed_scenes = list(st.session_state["parsed_scenes"])
         else:
@@ -953,7 +1033,12 @@ with tab_studio:
                 bgm_volume=bgm_vol,
                 custom_audio_path=custom_audio_path,
                 tts_rate=tts_rate,
-                tts_pitch=tts_pitch
+                tts_pitch=tts_pitch,
+                tts_engine=selected_tts_engine,
+                eleven_model=selected_eleven_model,
+                eleven_api_key=eleven_key,
+                eleven_stability=eleven_stability,
+                eleven_similarity=eleven_similarity
             )
             c_progress.progress(100)
             c_status.update(label="🎉 Your video is ready!", state="complete", expanded=False)
@@ -1023,7 +1108,7 @@ with tab_auto:
         progress_bar = st.progress(5)
         
         try:
-            is_eng = selected_voice_code.startswith("en-")
+            is_eng = is_voice_english
             
             # Agent 1: Topic Generator
             status_box.write("🔹 **Agent 1 (Topic Architect):** Synthesizing high-retention title & hook...")
@@ -1073,7 +1158,12 @@ with tab_auto:
                 bgm_filename=selected_bgm if selected_bgm != "No Background Music" else None,
                 bgm_volume=bgm_vol,
                 tts_rate=tts_rate,
-                tts_pitch=tts_pitch
+                tts_pitch=tts_pitch,
+                tts_engine=selected_tts_engine,
+                eleven_model=selected_eleven_model,
+                eleven_api_key=eleven_key,
+                eleven_stability=eleven_stability,
+                eleven_similarity=eleven_similarity
             )
             progress_bar.progress(100)
             status_box.update(label="🎉 Autonomous Video Complete!", state="complete", expanded=False)
@@ -1133,7 +1223,7 @@ with tab_batch:
             st.markdown(f"#### 🎬 Video {idx+1}/{total_videos}: {top['title']}")
             
             with st.status(f"Processing Video {idx+1}...", expanded=False) as b_stat:
-                is_eng = selected_voice_code.startswith("en-")
+                is_eng = is_voice_english
                 script = generate_and_check_script(
                     top['title'],
                     batch_dur,
@@ -1163,7 +1253,12 @@ with tab_batch:
                     bgm_filename=selected_bgm if selected_bgm != "No Background Music" else None,
                     bgm_volume=bgm_vol,
                     tts_rate=tts_rate,
-                    tts_pitch=tts_pitch
+                    tts_pitch=tts_pitch,
+                    tts_engine=selected_tts_engine,
+                    eleven_model=selected_eleven_model,
+                    eleven_api_key=eleven_key,
+                    eleven_stability=eleven_stability,
+                    eleven_similarity=eleven_similarity
                 )
                 b_stat.update(label=f"Video {idx+1} complete!", state="complete")
                 

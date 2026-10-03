@@ -50,6 +50,8 @@ _K_GEM = "QVEuQWI4Uk42SjZUeXRKOUFsMDZYbXlvNlNOY25HMjdpMlNzRTFqT2J1OF9kQUFuaDhPdF
 _K_PEX = "bjhSTHFhTWhVY2NsSXpBWGN2TkdCaVl1UGU2V0lReWE3Mm5VWWRENFFwSG1WQWhvYWp3ZkI0dE0="
 _K_PIX = "NTc3NjIxMzMtZTk0ZGFmZTU2ZWIwNjJhNWNjYzcwZGFiNw=="
 
+_K_ELEVEN = "c2tfMDg4YzMyZDg1OWZiNzBkOTJmMWM5YTM0OTczNjZiZTE1YzVjYzlhNjFmNTNlMjIw"
+
 def get_gemini_api_key():
     return _get_key_from_env_or_secrets("GEMINI_API_KEY") or _k_dec(_K_GEM)
 
@@ -58,6 +60,9 @@ def get_pexels_api_key():
 
 def get_pixabay_api_key():
     return _get_key_from_env_or_secrets("PIXABAY_API_KEY") or _k_dec(_K_PIX)
+
+def get_elevenlabs_api_key():
+    return _get_key_from_env_or_secrets("ELEVENLABS_API_KEY") or _k_dec(_K_ELEVEN)
 
 def get_google_maps_api_key():
     return _get_key_from_env_or_secrets("GOOGLE_MAPS_API_KEY")
@@ -110,6 +115,31 @@ VOICES = {
     "🇺🇸 English US - Christopher (Deep Male)": "en-US-ChristopherNeural",
     "🇬🇧 English UK - Sonia (Female)": "en-GB-SoniaNeural",
     "🇬🇧 English UK - Ryan (Male)": "en-GB-RyanNeural",
+}
+
+# ElevenLabs Studio AI Models & Curated Voices
+ELEVEN_MODELS = {
+    "🌐 Eleven Multilingual v2 (Best for Bengali 🇧🇩, Hindi & 29+ Languages)": "eleven_multilingual_v2",
+    "⚡ Eleven Flash v2.5 (Ultra-Fast & Low Latency Multilingual)": "eleven_flash_v2_5",
+    "🚀 Eleven Turbo v2.5 (Fast, High Quality & Expressive)": "eleven_turbo_v2_5",
+}
+
+ELEVEN_DEFAULT_VOICES = {
+    "🇬🇧 George (Deep, Warm, Captivating Storyteller)": "JBFqnCBsd6RMkjVDRZzb",
+    "🇺🇸 Sarah (Mature, Reassuring, Professional Female)": "EXAVITQu4vr4xnSDxMaL",
+    "🇦🇺 Charlie (Deep, Confident, Energetic Male)": "IKne3meq5aSn9XLyUdCD",
+    "🇺🇸 Laura (Enthusiast, Quirky, Expressive Female)": "FGY2WhTYpPnrIDTdsKH5",
+    "🇺🇸 Liam (Energetic, Social Media Creator Male)": "TX3LPaxmHKxFdv7VOQHJ",
+    "🇬🇧 Alice (Clear, Engaging Educator Female)": "Xb7hH8MSUJpSbSDYk0k2",
+    "🇺🇸 Roger (Laid-Back, Casual, Resonant Male)": "CwhRBWXzGAHq8TQ4Fs17",
+    "🇺🇸 River (Relaxed, Neutral, Informative)": "SAz9YHcvj6GT2YYXdXww",
+    "🇺🇸 Callum (Husky, Mysterious Trickster Male)": "N2lVS1w4EtoT3dr4eOWO",
+    "🇺🇸 Harry (Fierce, Intense Warrior Male)": "SOYHLrjzK2X1ezoPC6cr",
+    "🇺🇸 Brian (Deep, Master Narrative Male)": "nPczCjzI2devNBz1zQrb",
+    "🇬🇧 Daniel (Authoritative News Presenter Male)": "onwK4e9ZLuTAKqWW03F9",
+    "🇬🇧 Lily (Velvety, Warm Actress Female)": "pFZP5JQG7iQjIQuC4Bku",
+    "🇺🇸 Bill (Trustworthy, Documentarian Male)": "pqHfZKP75CvOlQylNhV4",
+    "🇺🇸 Jessica (Expressive, Storyteller Female)": "cgSgspJ2msm6clMCkdW9",
 }
 
 # Video Dimensions & Ratios

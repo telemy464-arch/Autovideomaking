@@ -23,6 +23,11 @@ def compose_full_video(
     custom_audio_path: Path = None,
     tts_rate: str = "+0%",
     tts_pitch: str = "+0Hz",
+    tts_engine: str = "edge-tts",
+    eleven_model: str = "eleven_multilingual_v2",
+    eleven_api_key: str = None,
+    eleven_stability: float = 0.5,
+    eleven_similarity: float = 0.75,
     progress_callback = None
 ) -> dict:
     """
@@ -81,7 +86,12 @@ def compose_full_video(
                 output_filename=audio_filename,
                 voice=voice_name,
                 rate=tts_rate,
-                pitch=tts_pitch
+                pitch=tts_pitch,
+                engine=tts_engine,
+                eleven_model=eleven_model,
+                eleven_api_key=eleven_api_key,
+                eleven_stability=eleven_stability,
+                eleven_similarity=eleven_similarity
             )
             audio_path = Path(audio_result["audio_path"])
             duration = max(2.5, audio_result["duration"])
