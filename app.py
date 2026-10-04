@@ -43,7 +43,7 @@ from agents.topic_agent import generate_topics
 from agents.script_agent import generate_and_check_script, auto_segment_script_into_scenes
 from agents.media_agent import collect_media_for_scenes
 from agents.composer_agent import compose_full_video
-from core.tts_engine import VOICES, fetch_elevenlabs_voices, generate_speech
+from core.tts_engine import VOICES, fetch_elevenlabs_voices, generate_speech, analyze_voice_sample
 
 # Page Configuration
 st.set_page_config(
@@ -613,14 +613,84 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 🎙️ Voice & Audio Synthesis")
+    clone_sample_path = None
+    clone_language = "bn"
+    clone_pitch_hz = 0
+    clone_speed_pct = 0
+
     tts_engine_choice = st.radio(
         "TTS Engine:",
-        ["🌐 Edge-TTS (Free, Fast & Unlimited)", "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)"],
+        [
+            "🌐 Edge-TTS (Free, Fast & Unlimited)",
+            "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)",
+            "🎭 My Voice Clone (আমার নিজস্ব ভয়েস ক্লোন - 100% Free)"
+        ],
         index=0,
         horizontal=True
     )
 
-    if tts_engine_choice == "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)":
+    if tts_engine_choice == "🎭 My Voice Clone (আমার নিজস্ব ভয়েস ক্লোন - 100% Free)":
+        selected_tts_engine = "voice-clone"
+        st.info("🎭 **My Voice Clone মোড সক্রিয়** — আপনার দেওয়া ৩০ সেকেন্ডের স্যাম্পল ভয়েস থেকে ক্লোন করে যেকোনো বাংলা ও ইংরেজি ভিডিও তৈরি করা যাবে।")
+
+        c_cl_up, c_cl_info = st.columns([3, 2])
+        with c_cl_up:
+            uploaded_clone_demo = st.file_uploader(
+                "🎙️ আপলোড করুন আপনার ৩০ সেকেন্ডের ভয়েস ডেমো (.mp3, .wav, .m4a):",
+                type=["mp3", "wav", "m4a", "ogg"],
+                key="voice_clone_demo_upload"
+            )
+            if uploaded_clone_demo is not None:
+                clone_sample_path = config.TEMP_DIR / f"user_clone_demo_{uploaded_clone_demo.name}"
+                with open(clone_sample_path, "wb") as f_cl:
+                    f_cl.write(uploaded_clone_demo.getbuffer())
+                st.audio(str(clone_sample_path))
+                v_prof = analyze_voice_sample(clone_sample_path)
+                st.success(f"✅ ভয়েস প্রোফাইল তৈরি হয়েছে! পিচ: {v_prof.get('pitch_hz', 125)} Hz • জেন্ডার: {v_prof.get('gender', 'male').upper()}")
+            else:
+                st.warning("⚠️ আপনার নিজের কণ্ঠের ৩০ সেকেন্ডের একটি অডিও ফাইল আপলোড করুন। (না দিলে সেরা এআই ভয়েস ব্যবহার করা হবে)")
+
+        with c_cl_info:
+            clone_lang_choice = st.radio("ভয়েস ও স্ক্রিপ্টের ভাষা (Language):", ["🇧🇩 Bengali (বাংলা)", "🇺🇸 English"], horizontal=True, key="clone_lang_radio")
+            is_voice_english = (clone_lang_choice == "🇺🇸 English")
+            clone_language = "en" if is_voice_english else "bn"
+
+            col_cl1, col_cl2 = st.columns(2)
+            with col_cl1:
+                clone_pitch_hz = st.slider("Vocal Pitch Fine-Tune", min_value=-20, max_value=20, value=0, step=1, format="%dHz", help="কণ্ঠ ভারী করতে মাইনাস করুন, তীক্ষ্ণ করতে প্লাস করুন")
+            with col_cl2:
+                clone_speed_pct = st.slider("Speaking Pace (গতি)", min_value=-20, max_value=30, value=0, step=5, format="%d%%")
+
+        c_cprev1, c_cprev2 = st.columns([2, 3])
+        with c_cprev1:
+            if st.button("🔊 Test My Cloned Voice", use_container_width=True):
+                with st.spinner("আপনার ক্লোন করা কণ্ঠে অডিও তৈরি হচ্ছে..."):
+                    test_phrase = "Welcome to today's video in my voice." if is_voice_english else "হ্যালো বন্ধুরা, আজকের ভিডিওতে আপনাদের সবাইকে স্বাগতম।"
+                    try:
+                        c_prev_res = generate_speech(
+                            text=test_phrase,
+                            output_filename="my_cloned_voice_preview.mp3",
+                            engine="voice-clone",
+                            clone_sample_path=clone_sample_path,
+                            clone_language=clone_language,
+                            clone_pitch_hz=clone_pitch_hz,
+                            clone_speed_pct=clone_speed_pct
+                        )
+                        st.audio(c_prev_res["audio_path"])
+                    except Exception as err:
+                        st.error(f"Clone preview error: {err}")
+        with c_cprev2:
+            st.caption("⚡ আনলিমিটেড সময় সাপোর্ট: ১০ মিনিট বা ৩০ মিনিটের বড় স্ক্রিপ্ট হলেও সিন-বাই-সিন নিখুঁতভাবে আপনার ক্লোন করা ভয়েসেই রেন্ডার সম্পন্ন হবে।")
+
+        selected_voice_label = "My Cloned Voice (Custom)"
+        selected_voice_code = "my-voice-clone"
+        selected_eleven_model = "eleven_multilingual_v2"
+        eleven_stability = 0.5
+        eleven_similarity = 0.75
+        tts_rate = f"{clone_speed_pct:+d}%"
+        tts_pitch = f"{clone_pitch_hz:+d}Hz"
+
+    elif tts_engine_choice == "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)":
         selected_tts_engine = "elevenlabs"
         st.info("💎 **ElevenLabs Studio AI Voice Selected** — ফিল্ম-কোয়ালিটি হিউম্যান ভয়েস, প্রাকৃতিক অনুভূতি ও জীবন্ত উচ্চারণ।")
         
@@ -1038,7 +1108,11 @@ with tab_studio:
                 eleven_model=selected_eleven_model,
                 eleven_api_key=eleven_key,
                 eleven_stability=eleven_stability,
-                eleven_similarity=eleven_similarity
+                eleven_similarity=eleven_similarity,
+                clone_sample_path=clone_sample_path,
+                clone_language=clone_language,
+                clone_pitch_hz=clone_pitch_hz,
+                clone_speed_pct=clone_speed_pct
             )
             c_progress.progress(100)
             c_status.update(label="🎉 Your video is ready!", state="complete", expanded=False)
@@ -1163,7 +1237,11 @@ with tab_auto:
                 eleven_model=selected_eleven_model,
                 eleven_api_key=eleven_key,
                 eleven_stability=eleven_stability,
-                eleven_similarity=eleven_similarity
+                eleven_similarity=eleven_similarity,
+                clone_sample_path=clone_sample_path,
+                clone_language=clone_language,
+                clone_pitch_hz=clone_pitch_hz,
+                clone_speed_pct=clone_speed_pct
             )
             progress_bar.progress(100)
             status_box.update(label="🎉 Autonomous Video Complete!", state="complete", expanded=False)
@@ -1258,7 +1336,11 @@ with tab_batch:
                     eleven_model=selected_eleven_model,
                     eleven_api_key=eleven_key,
                     eleven_stability=eleven_stability,
-                    eleven_similarity=eleven_similarity
+                    eleven_similarity=eleven_similarity,
+                    clone_sample_path=clone_sample_path,
+                    clone_language=clone_language,
+                    clone_pitch_hz=clone_pitch_hz,
+                    clone_speed_pct=clone_speed_pct
                 )
                 b_stat.update(label=f"Video {idx+1} complete!", state="complete")
                 

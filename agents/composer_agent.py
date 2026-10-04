@@ -28,6 +28,10 @@ def compose_full_video(
     eleven_api_key: str = None,
     eleven_stability: float = 0.5,
     eleven_similarity: float = 0.75,
+    clone_sample_path: Path = None,
+    clone_language: str = "bn",
+    clone_pitch_hz: int = 0,
+    clone_speed_pct: int = 0,
     progress_callback = None
 ) -> dict:
     """
@@ -91,7 +95,11 @@ def compose_full_video(
                 eleven_model=eleven_model,
                 eleven_api_key=eleven_api_key,
                 eleven_stability=eleven_stability,
-                eleven_similarity=eleven_similarity
+                eleven_similarity=eleven_similarity,
+                clone_sample_path=clone_sample_path,
+                clone_language=clone_language,
+                clone_pitch_hz=clone_pitch_hz,
+                clone_speed_pct=clone_speed_pct
             )
             audio_path = Path(audio_result["audio_path"])
             duration = max(2.5, audio_result["duration"])
