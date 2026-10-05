@@ -379,6 +379,88 @@ def generate_cloned_speech(
     base_res["duration"] = final_dur
     return base_res
 
+def create_fish_audio_voice(api_key: str, audio_path: Path, title: str = "My Cloned Voice") -> str:
+    """
+    Uploads user's 30-second audio demo to Fish Audio (POST /model)
+    and returns the generated voice model ID (reference_id).
+    """
+    import requests
+    url = "https://api.fish.audio/model"
+    headers = {
+        "Authorization": f"Bearer {api_key.strip()}"
+    }
+    with open(audio_path, "rb") as f:
+        files = {
+            "voices": (Path(audio_path).name, f, "audio/mpeg")
+        }
+        data = {
+            "type": "tts",
+            "title": title,
+            "visibility": "private",
+            "train_mode": "fast"
+        }
+        resp = requests.post(url, headers=headers, data=data, files=files, timeout=60)
+        resp.raise_for_status()
+        res_json = resp.json()
+        return res_json.get("_id") or res_json.get("id")
+
+def generate_fish_audio_speech(
+    text: str,
+    output_path: Path,
+    api_key: str,
+    reference_id: str,
+    speed: float = 1.0
+) -> dict:
+    """
+    Synthesizes speech using Fish Audio Zero-Shot Neural Voice Model.
+    True neural clone preserving user's vocal cords, accent, and timbre in Bengali & English.
+    """
+    import requests
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    url = "https://api.fish.audio/v1/tts"
+    headers = {
+        "Authorization": f"Bearer {api_key.strip()}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "text": text,
+        "reference_id": reference_id.strip(),
+        "format": "mp3",
+        "mp3_bitrate": 128,
+        "prosody": {
+            "speed": float(speed)
+        }
+    }
+    resp = requests.post(url, headers=headers, json=payload, timeout=50)
+    resp.raise_for_status()
+
+    with open(output_path, "wb") as f_out:
+        f_out.write(resp.content)
+
+    duration = get_audio_duration(output_path)
+
+    # Word-level timing estimation for dynamic karaoke subtitles
+    words = text.strip().split()
+    word_timings = []
+    if words and duration > 0:
+        step = duration / len(words)
+        for idx, w in enumerate(words):
+            word_timings.append({
+                "word": w,
+                "start": round(idx * step, 3),
+                "end": round((idx + 1) * step, 3),
+                "duration": round(step, 3)
+            })
+
+    return {
+        "audio_path": str(output_path),
+        "duration": duration,
+        "srt_content": "",
+        "word_timings": word_timings
+    }
+
 def generate_speech(
     text: str,
     output_filename: str = "speech.mp3",
@@ -393,18 +475,38 @@ def generate_speech(
     clone_sample_path: Path = None,
     clone_language: str = "bn",
     clone_pitch_hz: int = 0,
-    clone_speed_pct: int = 0
+    clone_speed_pct: int = 0,
+    fish_api_key: str = None,
+    fish_reference_id: str = None,
+    fish_speed: float = 1.0
 ) -> dict:
     """
     Synchronous wrapper for speech generation.
     Supports:
       1. Edge-TTS (free, fast, unlimited)
       2. ElevenLabs (ultra-realistic studio voices)
-      3. My Voice Clone (cloned to user's 30s voice demo, unlimited 10-30m duration)
+      3. Fish Audio (True Zero-Shot Neural Voice Clone)
+      4. My Voice Clone (acoustic profile morphing)
     """
     out_path = TEMP_DIR / output_filename
 
-    # 1. Handle Voice Cloning Engine
+    # 1. Handle Fish Audio Neural Voice Cloning Engine
+    if engine.lower() in ["fish", "fish-audio", "fish_audio", "fishaudio"]:
+        if fish_api_key and fish_reference_id:
+            try:
+                return generate_fish_audio_speech(
+                    text=text,
+                    output_path=out_path,
+                    api_key=fish_api_key,
+                    reference_id=fish_reference_id,
+                    speed=fish_speed
+                )
+            except Exception as e:
+                fallback_voice = "bn-BD-PradeepNeural" if clone_language == "bn" else "en-US-GuyNeural"
+                print(f"[Fish Audio Notice] {e}. Auto-falling back to Edge-TTS ({fallback_voice})...")
+                return asyncio.run(generate_speech_async(text, out_path, fallback_voice, rate, pitch))
+
+    # 2. Handle Voice Cloning Engine
     if engine.lower() in ["clone", "voice-clone", "voice_clone", "my-voice", "my_voice"]:
         try:
             return generate_cloned_speech(
@@ -420,7 +522,7 @@ def generate_speech(
             print(f"[Voice Clone Notice] {e}. Auto-falling back to Edge-TTS ({fallback_voice})...")
             return asyncio.run(generate_speech_async(text, out_path, fallback_voice, rate, pitch))
 
-    # 2. Handle ElevenLabs Engine
+    # 3. Handle ElevenLabs Engine
     if engine.lower() in ["elevenlabs", "eleven_labs", "eleven"]:
         try:
             return generate_elevenlabs_speech(
@@ -437,7 +539,7 @@ def generate_speech(
             print(f"[ElevenLabs Notice] {e}. Auto-falling back to Edge-TTS ({fallback_voice})...")
             return asyncio.run(generate_speech_async(text, out_path, fallback_voice, rate, pitch))
 
-    # 3. Default: Edge-TTS
+    # 4. Default: Edge-TTS
     return asyncio.run(generate_speech_async(text, out_path, voice, rate, pitch))
 
 def get_audio_duration(file_path: Path) -> float:

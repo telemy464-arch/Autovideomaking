@@ -64,6 +64,9 @@ def get_pixabay_api_key():
 def get_elevenlabs_api_key():
     return _get_key_from_env_or_secrets("ELEVENLABS_API_KEY") or _k_dec(_K_ELEVEN)
 
+def get_fish_audio_api_key():
+    return _get_key_from_env_or_secrets("FISH_AUDIO_API_KEY")
+
 def get_google_maps_api_key():
     return _get_key_from_env_or_secrets("GOOGLE_MAPS_API_KEY")
 

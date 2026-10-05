@@ -43,7 +43,7 @@ from agents.topic_agent import generate_topics
 from agents.script_agent import generate_and_check_script, auto_segment_script_into_scenes
 from agents.media_agent import collect_media_for_scenes
 from agents.composer_agent import compose_full_video
-from core.tts_engine import VOICES, fetch_elevenlabs_voices, generate_speech, analyze_voice_sample
+from core.tts_engine import VOICES, fetch_elevenlabs_voices, generate_speech, analyze_voice_sample, create_fish_audio_voice
 
 # Page Configuration
 st.set_page_config(
@@ -618,20 +618,131 @@ with st.sidebar:
     clone_pitch_hz = 0
     clone_speed_pct = 0
 
+    fish_api_key = config.get_fish_audio_api_key()
+    fish_reference_id = None
+    fish_speed = 1.0
+
     tts_engine_choice = st.radio(
         "TTS Engine:",
         [
             "🌐 Edge-TTS (Free, Fast & Unlimited)",
+            "🐟 Fish Audio (Real AI Voice Clone - Free API)",
             "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)",
-            "🎭 My Voice Clone (আমার নিজস্ব ভয়েস ক্লোন - 100% Free)"
+            "🎭 Acoustic Profile Clone (Local Pitch & EQ - 100% Free)"
         ],
-        index=0,
+        index=1 if fish_api_key else 0,
         horizontal=True
     )
 
-    if tts_engine_choice == "🎭 My Voice Clone (আমার নিজস্ব ভয়েস ক্লোন - 100% Free)":
+    if tts_engine_choice == "🐟 Fish Audio (Real AI Voice Clone - Free API)":
+        selected_tts_engine = "fish-audio"
+        st.info("🐟 **Fish Audio (True Neural Voice Cloning)** — আপনার দেওয়া ৩০ সেকেন্ডের ভয়েস স্যাম্পল থেকে হুবহু আপনার গলার স্বর, উচ্চারণ ও টোন ক্লোন করবে। বাংলা (Bengali) ও ইংরেজি (English) উভয় ভাষায় বাস্তবসম্মত কণ্ঠ তৈরি হয়।")
+
+        c_fish_key, c_fish_id = st.columns([1, 1])
+        with c_fish_key:
+            fish_key_input = st.text_input(
+                "Fish Audio API Key:",
+                value=fish_api_key if fish_api_key else "",
+                type="password",
+                help="https://fish.audio/app/api-keys/ থেকে আপনার ফ্রি API Key কপি করে এখানে বসান।"
+            )
+            if fish_key_input:
+                fish_api_key = fish_key_input.strip()
+            st.caption("👉 [fish.audio/app/api-keys](https://fish.audio/app/api-keys/) থেকে ফ্রি API Key সংগ্রহ করতে পারেন।")
+
+        with c_fish_id:
+            fish_saved_ref = st.session_state.get("fish_voice_ref_id", "")
+            fish_ref_input = st.text_input(
+                "Voice Model / Reference ID (ঐচ্ছিক):",
+                value=fish_saved_ref,
+                help="আগে ক্লোন করা থাকলে সেই মডেলের ID সরাসরি ব্যবহার করতে পারেন।"
+            )
+            if fish_ref_input:
+                fish_reference_id = fish_ref_input.strip()
+
+        st.markdown("#### 🎙️ ৩০ সেকেন্ডের স্যাম্পল দিয়ে ভয়েস ক্লোন করুন:")
+        c_fup, c_fctl = st.columns([3, 2])
+        with c_fup:
+            fish_demo_file = st.file_uploader(
+                "আপনার নিজের কণ্ঠের ৩০-৬০ সেকেন্ডের অডিও আপলোড করুন (.mp3, .wav):",
+                type=["mp3", "wav", "m4a", "ogg"],
+                key="fish_audio_uploader"
+            )
+            if fish_demo_file is not None:
+                demo_path = config.TEMP_DIR / f"fish_demo_{fish_demo_file.name}"
+                with open(demo_path, "wb") as f_d:
+                    f_d.write(fish_demo_file.getbuffer())
+                st.audio(str(demo_path))
+
+                if st.button("⚡ Clone My Voice Now (ভয়েস মডেল তৈরি করুন)", use_container_width=True):
+                    if not fish_api_key:
+                        st.error("⚠️ অনুগ্রহ করে আগে আপনার Fish Audio API Key বসান।")
+                    else:
+                        with st.spinner("Fish Audio নিউরাল নেটওয়ার্কে আপনার ভয়েস ক্লোন হচ্ছে... (অল্প কিছু সেকেন্ড)"):
+                            try:
+                                new_ref_id = create_fish_audio_voice(
+                                    api_key=fish_api_key,
+                                    audio_path=demo_path,
+                                    title="Mizan Cloned Voice"
+                                )
+                                if new_ref_id:
+                                    st.session_state["fish_voice_ref_id"] = new_ref_id
+                                    fish_reference_id = new_ref_id
+                                    st.success(f"🎉 ভয়েস সফলভাবে ক্লোন হয়েছে! মডেল ID: `{new_ref_id}`")
+                                else:
+                                    st.error("ভয়েস মডেল ID পাওয়া যায়নি। দয়া করে API Key ও অডিও যাচাই করুন।")
+                            except Exception as err:
+                                st.error(f"ভয়েস ক্লোন করতে সমস্যা হয়েছে: {err}")
+
+        with c_fctl:
+            fish_lang_choice = st.radio(
+                "ভয়েস ও স্ক্রিপ্টের ভাষা:",
+                ["🇧🇩 Bengali (বাংলা)", "🇺🇸 English"],
+                horizontal=True,
+                key="fish_lang_choice"
+            )
+            is_voice_english = (fish_lang_choice == "🇺🇸 English")
+            clone_language = "en" if is_voice_english else "bn"
+
+            fish_speed = st.slider("কথার গতি (Speed)", min_value=0.7, max_value=1.5, value=1.0, step=0.05, format="%.2fx")
+
+            if st.button("🔊 Test Cloned Voice (পরীক্ষা করুন)", use_container_width=True):
+                current_ref = fish_reference_id or st.session_state.get("fish_voice_ref_id")
+                if not fish_api_key:
+                    st.error("⚠️ Fish Audio API Key দেওয়া হয়নি।")
+                elif not current_ref:
+                    st.warning("⚠️ অনুগ্রহ করে আগে ভয়েস ক্লোন করুন অথবা একটি Voice Reference ID দিন।")
+                else:
+                    with st.spinner("আপনার ক্লোন করা কণ্ঠে কথা বলা হচ্ছে..."):
+                        test_text = "Hello! This is my real AI cloned voice powered by Fish Audio." if is_voice_english else "হ্যালো বন্ধুরা, এটি ফিশ অডিও দিয়ে তৈরি আমার একদম নিজস্ব ক্লোন করা এআই ভয়েস।"
+                        try:
+                            f_preview = generate_speech(
+                                text=test_text,
+                                output_filename="fish_voice_preview.mp3",
+                                engine="fish-audio",
+                                fish_api_key=fish_api_key,
+                                fish_reference_id=current_ref,
+                                fish_speed=fish_speed
+                            )
+                            st.audio(f_preview["audio_path"])
+                            st.success("✅ আপনার নিজস্ব কণ্ঠে সফলভাবে কথা বলেছে!")
+                        except Exception as e_prev:
+                            st.error(f"টেস্ট অডিও তৈরিতে ব্যর্থ: {e_prev}")
+
+        if not fish_reference_id and "fish_voice_ref_id" in st.session_state:
+            fish_reference_id = st.session_state["fish_voice_ref_id"]
+
+        selected_voice_label = "Fish Audio Cloned Voice"
+        selected_voice_code = "fish-audio-cloned"
+        selected_eleven_model = "eleven_multilingual_v2"
+        eleven_stability = 0.5
+        eleven_similarity = 0.75
+        tts_rate = "+0%"
+        tts_pitch = "+0Hz"
+
+    elif tts_engine_choice == "🎭 Acoustic Profile Clone (Local Pitch & EQ - 100% Free)":
         selected_tts_engine = "voice-clone"
-        st.info("🎭 **My Voice Clone মোড সক্রিয়** — আপনার দেওয়া ৩০ সেকেন্ডের স্যাম্পল ভয়েস থেকে ক্লোন করে যেকোনো বাংলা ও ইংরেজি ভিডিও তৈরি করা যাবে।")
+        st.info("🎭 **Acoustic Profile Clone সক্রিয়** — আপনার দেওয়া ৩০ সেকেন্ডের স্যাম্পল ভয়েসের পিচ ও ইকুয়ালাইজার প্রোফাইল অনুযায়ী ভয়েস ফিল্টার তৈরি হবে।")
 
         c_cl_up, c_cl_info = st.columns([3, 2])
         with c_cl_up:
@@ -1112,7 +1223,10 @@ with tab_studio:
                 clone_sample_path=clone_sample_path,
                 clone_language=clone_language,
                 clone_pitch_hz=clone_pitch_hz,
-                clone_speed_pct=clone_speed_pct
+                clone_speed_pct=clone_speed_pct,
+                fish_api_key=fish_api_key,
+                fish_reference_id=fish_reference_id,
+                fish_speed=fish_speed
             )
             c_progress.progress(100)
             c_status.update(label="🎉 Your video is ready!", state="complete", expanded=False)
@@ -1241,7 +1355,10 @@ with tab_auto:
                 clone_sample_path=clone_sample_path,
                 clone_language=clone_language,
                 clone_pitch_hz=clone_pitch_hz,
-                clone_speed_pct=clone_speed_pct
+                clone_speed_pct=clone_speed_pct,
+                fish_api_key=fish_api_key,
+                fish_reference_id=fish_reference_id,
+                fish_speed=fish_speed
             )
             progress_bar.progress(100)
             status_box.update(label="🎉 Autonomous Video Complete!", state="complete", expanded=False)
@@ -1340,7 +1457,10 @@ with tab_batch:
                     clone_sample_path=clone_sample_path,
                     clone_language=clone_language,
                     clone_pitch_hz=clone_pitch_hz,
-                    clone_speed_pct=clone_speed_pct
+                    clone_speed_pct=clone_speed_pct,
+                    fish_api_key=fish_api_key,
+                    fish_reference_id=fish_reference_id,
+                    fish_speed=fish_speed
                 )
                 b_stat.update(label=f"Video {idx+1} complete!", state="complete")
                 

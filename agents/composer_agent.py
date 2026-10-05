@@ -32,6 +32,9 @@ def compose_full_video(
     clone_language: str = "bn",
     clone_pitch_hz: int = 0,
     clone_speed_pct: int = 0,
+    fish_api_key: str = None,
+    fish_reference_id: str = None,
+    fish_speed: float = 1.0,
     progress_callback = None
 ) -> dict:
     """
@@ -99,7 +102,10 @@ def compose_full_video(
                 clone_sample_path=clone_sample_path,
                 clone_language=clone_language,
                 clone_pitch_hz=clone_pitch_hz,
-                clone_speed_pct=clone_speed_pct
+                clone_speed_pct=clone_speed_pct,
+                fish_api_key=fish_api_key,
+                fish_reference_id=fish_reference_id,
+                fish_speed=fish_speed
             )
             audio_path = Path(audio_result["audio_path"])
             duration = max(2.5, audio_result["duration"])
