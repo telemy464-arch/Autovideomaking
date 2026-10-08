@@ -43,7 +43,7 @@ from agents.topic_agent import generate_topics
 from agents.script_agent import generate_and_check_script, auto_segment_script_into_scenes
 from agents.media_agent import collect_media_for_scenes
 from agents.composer_agent import compose_full_video
-from core.tts_engine import VOICES, fetch_elevenlabs_voices, generate_speech, analyze_voice_sample, create_fish_audio_voice
+from core.tts_engine import VOICES, generate_speech
 
 # Page Configuration
 st.set_page_config(
@@ -595,7 +595,7 @@ with st.sidebar:
             <span style="font-size: 0.8rem; font-weight: 700; color: #22c55e; letter-spacing: 0.05em;">PREMIUM AI ENGINE ACTIVE</span>
         </div>
         <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
-            Gemini AI • ElevenLabs AI Voice • 4K Pexels/Pixabay • Ultra HD মিডিয়া রেডি
+            Gemini AI • Edge-TTS Free Voice • 4K Pexels/Pixabay • Ultra HD মিডিয়া রেডি
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -612,284 +612,59 @@ with st.sidebar:
     st.caption(f"💡 {selected_style_cfg['description']}")
 
     st.markdown("---")
-    st.markdown("### 🎙️ Voice & Audio Synthesis")
+    st.markdown("### 🎙️ Voice & Audio Synthesis (Edge-TTS)")
     clone_sample_path = None
     clone_language = "bn"
     clone_pitch_hz = 0
     clone_speed_pct = 0
-
-    fish_api_key = config.get_fish_audio_api_key()
+    fish_api_key = None
     fish_reference_id = None
     fish_speed = 1.0
 
-    tts_engine_choice = st.radio(
-        "TTS Engine:",
-        [
-            "🌐 Edge-TTS (Free, Fast & Unlimited)",
-            "🐟 Fish Audio (Real AI Voice Clone - Free API)",
-            "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)",
-            "🎭 Acoustic Profile Clone (Local Pitch & EQ - 100% Free)"
-        ],
-        index=1 if fish_api_key else 0,
-        horizontal=True
-    )
+    selected_tts_engine = "edge-tts"
+    selected_eleven_model = "eleven_multilingual_v2"
+    eleven_stability = 0.5
+    eleven_similarity = 0.75
 
-    if tts_engine_choice == "🐟 Fish Audio (Real AI Voice Clone - Free API)":
-        selected_tts_engine = "fish-audio"
-        st.info("🐟 **Fish Audio (True Neural Voice Cloning)** — আপনার দেওয়া ৩০ সেকেন্ডের ভয়েস স্যাম্পল থেকে হুবহু আপনার গলার স্বর, উচ্চারণ ও টোন ক্লোন করবে। বাংলা (Bengali) ও ইংরেজি (English) উভয় ভাষায় বাস্তবসম্মত কণ্ঠ তৈরি হয়।")
-
-        c_fish_key, c_fish_id = st.columns([1, 1])
-        with c_fish_key:
-            fish_key_input = st.text_input(
-                "Fish Audio API Key:",
-                value=fish_api_key if fish_api_key else "",
-                type="password",
-                help="https://fish.audio/app/api-keys/ থেকে আপনার ফ্রি API Key কপি করে এখানে বসান।"
-            )
-            if fish_key_input:
-                fish_api_key = fish_key_input.strip()
-            st.caption("👉 [fish.audio/app/api-keys](https://fish.audio/app/api-keys/) থেকে ফ্রি API Key সংগ্রহ করতে পারেন।")
-
-        with c_fish_id:
-            fish_saved_ref = st.session_state.get("fish_voice_ref_id", "")
-            fish_ref_input = st.text_input(
-                "Voice Model / Reference ID (ঐচ্ছিক):",
-                value=fish_saved_ref,
-                help="আগে ক্লোন করা থাকলে সেই মডেলের ID সরাসরি ব্যবহার করতে পারেন।"
-            )
-            if fish_ref_input:
-                fish_reference_id = fish_ref_input.strip()
-
-        st.markdown("#### 🎙️ ৩০ সেকেন্ডের স্যাম্পল দিয়ে ভয়েস ক্লোন করুন:")
-        c_fup, c_fctl = st.columns([3, 2])
-        with c_fup:
-            fish_demo_file = st.file_uploader(
-                "আপনার নিজের কণ্ঠের ৩০-৬০ সেকেন্ডের অডিও আপলোড করুন (.mp3, .wav):",
-                type=["mp3", "wav", "m4a", "ogg"],
-                key="fish_audio_uploader"
-            )
-            if fish_demo_file is not None:
-                demo_path = config.TEMP_DIR / f"fish_demo_{fish_demo_file.name}"
-                with open(demo_path, "wb") as f_d:
-                    f_d.write(fish_demo_file.getbuffer())
-                st.audio(str(demo_path))
-
-                if st.button("⚡ Clone My Voice Now (ভয়েস মডেল তৈরি করুন)", use_container_width=True):
-                    if not fish_api_key:
-                        st.error("⚠️ অনুগ্রহ করে আগে আপনার Fish Audio API Key বসান।")
-                    else:
-                        with st.spinner("Fish Audio নিউরাল নেটওয়ার্কে আপনার ভয়েস ক্লোন হচ্ছে... (অল্প কিছু সেকেন্ড)"):
-                            try:
-                                new_ref_id = create_fish_audio_voice(
-                                    api_key=fish_api_key,
-                                    audio_path=demo_path,
-                                    title="Mizan Cloned Voice"
-                                )
-                                if new_ref_id:
-                                    st.session_state["fish_voice_ref_id"] = new_ref_id
-                                    fish_reference_id = new_ref_id
-                                    st.success(f"🎉 ভয়েস সফলভাবে ক্লোন হয়েছে! মডেল ID: `{new_ref_id}`")
-                                else:
-                                    st.error("ভয়েস মডেল ID পাওয়া যায়নি। দয়া করে API Key ও অডিও যাচাই করুন।")
-                            except Exception as err:
-                                st.error(f"ভয়েস ক্লোন করতে সমস্যা হয়েছে: {err}")
-
-        with c_fctl:
-            fish_lang_choice = st.radio(
-                "ভয়েস ও স্ক্রিপ্টের ভাষা:",
-                ["🇧🇩 Bengali (বাংলা)", "🇺🇸 English"],
-                horizontal=True,
-                key="fish_lang_choice"
-            )
-            is_voice_english = (fish_lang_choice == "🇺🇸 English")
-            clone_language = "en" if is_voice_english else "bn"
-
-            fish_speed = st.slider("কথার গতি (Speed)", min_value=0.7, max_value=1.5, value=1.0, step=0.05, format="%.2fx")
-
-            if st.button("🔊 Test Cloned Voice (পরীক্ষা করুন)", use_container_width=True):
-                current_ref = fish_reference_id or st.session_state.get("fish_voice_ref_id")
-                if not fish_api_key:
-                    st.error("⚠️ Fish Audio API Key দেওয়া হয়নি।")
-                elif not current_ref:
-                    st.warning("⚠️ অনুগ্রহ করে আগে ভয়েস ক্লোন করুন অথবা একটি Voice Reference ID দিন।")
-                else:
-                    with st.spinner("আপনার ক্লোন করা কণ্ঠে কথা বলা হচ্ছে..."):
-                        test_text = "Hello! This is my real AI cloned voice powered by Fish Audio." if is_voice_english else "হ্যালো বন্ধুরা, এটি ফিশ অডিও দিয়ে তৈরি আমার একদম নিজস্ব ক্লোন করা এআই ভয়েস।"
-                        try:
-                            f_preview = generate_speech(
-                                text=test_text,
-                                output_filename="fish_voice_preview.mp3",
-                                engine="fish-audio",
-                                fish_api_key=fish_api_key,
-                                fish_reference_id=current_ref,
-                                fish_speed=fish_speed
-                            )
-                            st.audio(f_preview["audio_path"])
-                            st.success("✅ আপনার নিজস্ব কণ্ঠে সফলভাবে কথা বলেছে!")
-                        except Exception as e_prev:
-                            st.error(f"টেস্ট অডিও তৈরিতে ব্যর্থ: {e_prev}")
-
-        if not fish_reference_id and "fish_voice_ref_id" in st.session_state:
-            fish_reference_id = st.session_state["fish_voice_ref_id"]
-
-        selected_voice_label = "Fish Audio Cloned Voice"
-        selected_voice_code = "fish-audio-cloned"
-        selected_eleven_model = "eleven_multilingual_v2"
-        eleven_stability = 0.5
-        eleven_similarity = 0.75
-        tts_rate = "+0%"
-        tts_pitch = "+0Hz"
-
-    elif tts_engine_choice == "🎭 Acoustic Profile Clone (Local Pitch & EQ - 100% Free)":
-        selected_tts_engine = "voice-clone"
-        st.info("🎭 **Acoustic Profile Clone সক্রিয়** — আপনার দেওয়া ৩০ সেকেন্ডের স্যাম্পল ভয়েসের পিচ ও ইকুয়ালাইজার প্রোফাইল অনুযায়ী ভয়েস ফিল্টার তৈরি হবে।")
-
-        c_cl_up, c_cl_info = st.columns([3, 2])
-        with c_cl_up:
-            uploaded_clone_demo = st.file_uploader(
-                "🎙️ আপলোড করুন আপনার ৩০ সেকেন্ডের ভয়েস ডেমো (.mp3, .wav, .m4a):",
-                type=["mp3", "wav", "m4a", "ogg"],
-                key="voice_clone_demo_upload"
-            )
-            if uploaded_clone_demo is not None:
-                clone_sample_path = config.TEMP_DIR / f"user_clone_demo_{uploaded_clone_demo.name}"
-                with open(clone_sample_path, "wb") as f_cl:
-                    f_cl.write(uploaded_clone_demo.getbuffer())
-                st.audio(str(clone_sample_path))
-                v_prof = analyze_voice_sample(clone_sample_path)
-                st.success(f"✅ ভয়েস প্রোফাইল তৈরি হয়েছে! পিচ: {v_prof.get('pitch_hz', 125)} Hz • জেন্ডার: {v_prof.get('gender', 'male').upper()}")
-            else:
-                st.warning("⚠️ আপনার নিজের কণ্ঠের ৩০ সেকেন্ডের একটি অডিও ফাইল আপলোড করুন। (না দিলে সেরা এআই ভয়েস ব্যবহার করা হবে)")
-
-        with c_cl_info:
-            clone_lang_choice = st.radio("ভয়েস ও স্ক্রিপ্টের ভাষা (Language):", ["🇧🇩 Bengali (বাংলা)", "🇺🇸 English"], horizontal=True, key="clone_lang_radio")
-            is_voice_english = (clone_lang_choice == "🇺🇸 English")
-            clone_language = "en" if is_voice_english else "bn"
-
-            col_cl1, col_cl2 = st.columns(2)
-            with col_cl1:
-                clone_pitch_hz = st.slider("Vocal Pitch Fine-Tune", min_value=-20, max_value=20, value=0, step=1, format="%dHz", help="কণ্ঠ ভারী করতে মাইনাস করুন, তীক্ষ্ণ করতে প্লাস করুন")
-            with col_cl2:
-                clone_speed_pct = st.slider("Speaking Pace (গতি)", min_value=-20, max_value=30, value=0, step=5, format="%d%%")
-
-        c_cprev1, c_cprev2 = st.columns([2, 3])
-        with c_cprev1:
-            if st.button("🔊 Test My Cloned Voice", use_container_width=True):
-                with st.spinner("আপনার ক্লোন করা কণ্ঠে অডিও তৈরি হচ্ছে..."):
-                    test_phrase = "Welcome to today's video in my voice." if is_voice_english else "হ্যালো বন্ধুরা, আজকের ভিডিওতে আপনাদের সবাইকে স্বাগতম।"
-                    try:
-                        c_prev_res = generate_speech(
-                            text=test_phrase,
-                            output_filename="my_cloned_voice_preview.mp3",
-                            engine="voice-clone",
-                            clone_sample_path=clone_sample_path,
-                            clone_language=clone_language,
-                            clone_pitch_hz=clone_pitch_hz,
-                            clone_speed_pct=clone_speed_pct
-                        )
-                        st.audio(c_prev_res["audio_path"])
-                    except Exception as err:
-                        st.error(f"Clone preview error: {err}")
-        with c_cprev2:
-            st.caption("⚡ আনলিমিটেড সময় সাপোর্ট: ১০ মিনিট বা ৩০ মিনিটের বড় স্ক্রিপ্ট হলেও সিন-বাই-সিন নিখুঁতভাবে আপনার ক্লোন করা ভয়েসেই রেন্ডার সম্পন্ন হবে।")
-
-        selected_voice_label = "My Cloned Voice (Custom)"
-        selected_voice_code = "my-voice-clone"
-        selected_eleven_model = "eleven_multilingual_v2"
-        eleven_stability = 0.5
-        eleven_similarity = 0.75
-        tts_rate = f"{clone_speed_pct:+d}%"
-        tts_pitch = f"{clone_pitch_hz:+d}Hz"
-
-    elif tts_engine_choice == "💎 ElevenLabs AI (Ultra-Realistic Studio Voice)":
-        selected_tts_engine = "elevenlabs"
-        st.info("💎 **ElevenLabs Studio AI Voice Selected** — ফিল্ম-কোয়ালিটি হিউম্যান ভয়েস, প্রাকৃতিক অনুভূতি ও জীবন্ত উচ্চারণ।")
-        
-        eleven_lang_choice = st.radio("ভয়েস ও স্ক্রিপ্টের ভাষা:", ["🇧🇩 Bengali (বাংলা)", "🇺🇸 English"], horizontal=True)
-        is_voice_english = (eleven_lang_choice == "🇺🇸 English")
-        
-        selected_eleven_model_label = st.selectbox(
-            "ElevenLabs AI Model:",
-            options=list(config.ELEVEN_MODELS.keys()),
-            index=0,
-            help="Eleven Multilingual v2 বাংলা 🇧🇩 এবং ইংরেজি উভয় ভাষার জন্যই সর্বোত্তম কোয়ালিটি দেয়।"
-        )
-        selected_eleven_model = config.ELEVEN_MODELS[selected_eleven_model_label]
-        
-        c_v1, c_v2 = st.columns([3, 1])
-        with c_v1:
-            eleven_voices_dict = fetch_elevenlabs_voices(api_key=eleven_key)
-            selected_voice_label = st.selectbox(
-                "Select ElevenLabs Voice:",
-                options=list(eleven_voices_dict.keys()),
-                index=0
-            )
-            selected_voice_code = eleven_voices_dict[selected_voice_label]
-        with c_v2:
-            st.write("")
-            st.write("")
-            if st.button("🔄 Refresh", help="আপনার ElevenLabs অ্যাকাউন্টের ভয়েস রিফ্রেশ করুন"):
-                st.rerun()
-
-        col_st1, col_st2 = st.columns(2)
-        with col_st1:
-            eleven_stability = st.slider(
-                "Voice Stability (স্থিরতা)", 0.0, 1.0, 0.50, 0.05, format="%.2f",
-                help="কম ভ্যালু = বেশি নাটকীয়তা ও আবেগ, বেশি ভ্যালু = স্থির ও পেশাদার।"
-            )
-        with col_st2:
-            eleven_similarity = st.slider(
-                "Clarity / Similarity Boost (স্পষ্টতা)", 0.0, 1.0, 0.75, 0.05, format="%.2f",
-                help="ভয়েসের স্পষ্টতা ও আসল টোনের সাথে মিল।"
-            )
-
-        c_prev1, c_prev2 = st.columns([2, 3])
-        with c_prev1:
-            if st.button("🔊 Test ElevenLabs Voice", use_container_width=True):
-                with st.spinner("ভয়েস অডিও তৈরি হচ্ছে..."):
-                    test_phrase = "Welcome to today's video." if is_voice_english else "আজকের ভিডিওতে আপনাদের সবাইকে স্বাগতম।"
-                    try:
-                        prev_res = generate_speech(
-                            text=test_phrase,
-                            output_filename="eleven_sample_preview.mp3",
-                            voice=selected_voice_code,
-                            engine="elevenlabs",
-                            eleven_model=selected_eleven_model,
-                            eleven_api_key=eleven_key,
-                            eleven_stability=eleven_stability,
-                            eleven_similarity=eleven_similarity
-                        )
-                        st.audio(prev_res["audio_path"])
-                    except Exception as err:
-                        st.error(f"Voice preview error: {err}")
-        with c_prev2:
-            st.caption("💡 ফ্রি API কি-তে প্রতি মাসে ১০,০০০ অক্ষর ফ্রি থাকে। কোটা শেষ হলেও ভিডিও আটকে থাকবে না, স্বয়ংক্রিয়ভাবে Edge-TTS দিয়ে সম্পন্ন হবে।")
-
-        tts_rate = "+0%"
-        tts_pitch = "+0Hz"
+    voice_filter = st.radio("Voice Language Filter:", ["All Voices", "🇧🇩 Bengali", "🇺🇸/🇬🇧 English"], horizontal=True)
+    if voice_filter == "🇧🇩 Bengali":
+        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("bn-")}
+    elif voice_filter == "🇺🇸/🇬🇧 English":
+        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("en-")}
     else:
-        selected_tts_engine = "edge-tts"
-        selected_eleven_model = "eleven_multilingual_v2"
-        eleven_stability = 0.5
-        eleven_similarity = 0.75
+        filtered_voices = config.VOICES
 
-        voice_filter = st.radio("Voice Language Filter:", ["All Voices", "🇧🇩 Bengali", "🇺🇸/🇬🇧 English"], horizontal=True)
-        if voice_filter == "🇧🇩 Bengali":
-            filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("bn-")}
-        elif voice_filter == "🇺🇸/🇬🇧 English":
-            filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("en-")}
-        else:
-            filtered_voices = config.VOICES
+    selected_voice_label = st.selectbox("Select Voice:", options=list(filtered_voices.keys()), index=0)
+    selected_voice_code = filtered_voices[selected_voice_label]
+    is_voice_english = selected_voice_code.startswith("en-")
 
-        selected_voice_label = st.selectbox("Select Voice:", options=list(filtered_voices.keys()), index=0)
-        selected_voice_code = filtered_voices[selected_voice_label]
-        is_voice_english = selected_voice_code.startswith("en-")
-
+    col_sp1, col_sp2 = st.columns(2)
+    with col_sp1:
         speed_val = st.slider("Speech Speed Rate", min_value=-20, max_value=50, value=0, step=5, format="%d%%")
         tts_rate = f"{speed_val:+d}%"
-
+    with col_sp2:
         pitch_val = st.slider("Speech Tone / Pitch", min_value=-10, max_value=10, value=0, step=1, format="%dHz")
         tts_pitch = f"{pitch_val:+d}Hz"
+
+    c_prev1, c_prev2 = st.columns([2, 3])
+    with c_prev1:
+        if st.button("🔊 Test Spoken Voice", use_container_width=True):
+            with st.spinner("ভয়েস অডিও তৈরি হচ্ছে..."):
+                test_phrase = "Welcome to today's video." if is_voice_english else "আজকের ভিডিওতে আপনাদের সবাইকে স্বাগতম।"
+                try:
+                    prev_res = generate_speech(
+                        text=test_phrase,
+                        output_filename="edge_sample_preview.mp3",
+                        voice=selected_voice_code,
+                        rate=tts_rate,
+                        pitch=tts_pitch,
+                        engine="edge-tts"
+                    )
+                    st.audio(prev_res["audio_path"])
+                except Exception as err:
+                    st.error(f"Voice preview error: {err}")
+    with c_prev2:
+        st.caption("⚡ Edge-TTS: ১০০% ফ্রি, আনলিমিটেড এবং দ্রুত গতির প্রাকৃতিক বাংলা ও ইংরেজি ভয়েস।")
 
     st.markdown("---")
     st.markdown("### 📐 Video Dimensions")
@@ -1128,12 +903,13 @@ with tab_studio:
         
         user_visual_prompts = []
         for i in range(st.session_state["prompt_box_count"]):
-            default_val = default_prompts[i] if i < len(default_prompts) else ""
+            k = f"vp_{i}"
+            if k not in st.session_state:
+                st.session_state[k] = default_prompts[i] if i < len(default_prompts) else ""
             p_val = st.text_input(
                 f"🎬 Scene {i+1} Prompt:",
-                value=default_val,
                 placeholder=f"e.g. {default_prompts[0]}",
-                key=f"vp_{i}"
+                key=k
             )
             user_visual_prompts.append(p_val.strip())
 

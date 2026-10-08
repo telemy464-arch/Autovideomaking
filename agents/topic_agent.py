@@ -131,7 +131,13 @@ def generate_topics(
 """
     try:
         client = genai.Client(api_key=key)
-        models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-latest", model_name, "gemini-2.5-flash"]
+        models_to_try = [
+            "gemini-3.5-flash",
+            "gemini-3.1-flash-lite",
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash"
+        ]
         
         response_text = None
         for m in models_to_try:
@@ -151,9 +157,19 @@ def generate_topics(
             cleaned = response_text.strip()
             if cleaned.startswith("```json"):
                 cleaned = cleaned[7:]
+            if cleaned.startswith("```"):
+                cleaned = cleaned[3:]
             if cleaned.endswith("```"):
                 cleaned = cleaned[:-3]
-            data = json.loads(cleaned.strip())
+            cleaned = cleaned.strip()
+            data = None
+            try:
+                data = json.loads(cleaned)
+            except Exception:
+                import re
+                arr_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
+                if arr_match:
+                    data = json.loads(arr_match.group(0))
             if isinstance(data, list) and len(data) > 0:
                 return data
     except Exception as e:

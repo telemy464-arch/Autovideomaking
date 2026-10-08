@@ -188,7 +188,14 @@ Respond ONLY with valid JSON in this exact structure (no markdown fences or comm
   ]
 }}
 """
-    models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-latest", model_name, "gemini-2.5-flash"]
+    models_to_try = [
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.6-flash"
+    ]
+    import re
     for m in models_to_try:
         try:
             resp = client.models.generate_content(
@@ -199,9 +206,17 @@ Respond ONLY with valid JSON in this exact structure (no markdown fences or comm
             txt = resp.text.strip()
             if txt.startswith("```json"):
                 txt = txt[7:]
+            if txt.startswith("```"):
+                txt = txt[3:]
             if txt.endswith("```"):
                 txt = txt[:-3]
-            return json.loads(txt.strip())
+            txt = txt.strip()
+            try:
+                return json.loads(txt)
+            except Exception:
+                json_match = re.search(r'\{.*\}', txt, re.DOTALL)
+                if json_match:
+                    return json.loads(json_match.group(0))
         except Exception as e:
             continue
     return None
@@ -270,7 +285,14 @@ Respond ONLY with valid JSON:
   ]
 }}
 """
-            models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+            models_to_try = [
+                "gemini-3.5-flash",
+                "gemini-3.1-flash-lite",
+                "gemini-flash-lite-latest",
+                "gemini-3.5-flash-lite",
+                "gemini-3.6-flash"
+            ]
+            import re
             for m in models_to_try:
                 try:
                     resp = client.models.generate_content(
@@ -281,9 +303,18 @@ Respond ONLY with valid JSON:
                     txt = resp.text.strip()
                     if txt.startswith("```json"):
                         txt = txt[7:]
+                    if txt.startswith("```"):
+                        txt = txt[3:]
                     if txt.endswith("```"):
                         txt = txt[:-3]
-                    data = json.loads(txt.strip())
+                    txt = txt.strip()
+                    data = None
+                    try:
+                        data = json.loads(txt)
+                    except Exception:
+                        json_match = re.search(r'\{.*\}', txt, re.DOTALL)
+                        if json_match:
+                            data = json.loads(json_match.group(0))
                     if data and "scenes" in data and len(data["scenes"]) > 0:
                         return data["scenes"]
                 except Exception as err:
@@ -381,7 +412,13 @@ Respond ONLY with valid JSON:
   "improvement_notes": ""
 }}
 """
-    models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-latest", model_name, "gemini-2.5-flash"]
+    models_to_try = [
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.6-flash"
+    ]
     for m in models_to_try:
         try:
             resp = client.models.generate_content(
@@ -392,9 +429,17 @@ Respond ONLY with valid JSON:
             txt = resp.text.strip()
             if txt.startswith("```json"):
                 txt = txt[7:]
+            if txt.startswith("```"):
+                txt = txt[3:]
             if txt.endswith("```"):
                 txt = txt[:-3]
-            return json.loads(txt.strip())
+            txt = txt.strip()
+            try:
+                return json.loads(txt)
+            except Exception:
+                json_match = re.search(r'\{.*\}', txt, re.DOTALL)
+                if json_match:
+                    return json.loads(json_match.group(0))
         except Exception:
             continue
 
