@@ -258,29 +258,28 @@ async def generate_speech_async(
             break
 
     if profile == "horror":
-        # Horror Preset: Deep atmospheric chest resonance, subtle spine-chilling echo, rich warmth
+        # Horror Preset: Pure Dry Studio - Deep chest resonance, intimate vocal presence, NO hallroom/echo
         af_chain = (
-            "highpass=f=60,lowpass=f=13000,"
-            "equalizer=f=160:width_type=o:w=1.2:g=3.8,"
-            "equalizer=f=3400:width_type=o:w=1.0:g=2.2,"
-            "aecho=0.8:0.65:60|120:0.18|0.08,"
-            "compand=attacks=0.03:decays=0.2:points=-70/-70|-24/-18|0/-1.5:gain=2,"
-            "loudnorm=I=-16:TP=-1.5:LRA=11"
+            "highpass=f=70,"
+            "equalizer=f=130:width_type=o:w=1.0:g=3.5,"
+            "equalizer=f=2800:width_type=o:w=1.2:g=2.0,"
+            "compand=attacks=0.02:decays=0.15:points=-70/-70|-20/-16|0/-1.2:gain=1.5,"
+            "loudnorm=I=-16:TP=-1.5:LRA=10"
         )
     elif profile == "educational":
-        # Educational Preset: Ultra-crisp speech intelligibility, zero mud, presence boost, crystal clarity
+        # Educational Preset: Pure Dry Studio - Ultra-crisp documentary clarity, crisp speech, zero mud
         af_chain = (
-            "highpass=f=90,lowpass=f=14000,"
-            "equalizer=f=250:width_type=o:w=1.0:g=-2.0,"
-            "equalizer=f=2800:width_type=o:w=1.2:g=2.8,"
-            "equalizer=f=5200:width_type=o:w=1.0:g=2.0,"
+            "highpass=f=85,"
+            "equalizer=f=220:width_type=o:w=1.0:g=-1.8,"
+            "equalizer=f=2800:width_type=o:w=1.2:g=2.5,"
+            "equalizer=f=4800:width_type=o:w=1.0:g=1.8,"
             "compand=attacks=0.02:decays=0.15:points=-70/-70|-20/-16|0/-1.2:gain=1.5,"
             "loudnorm=I=-15:TP=-1.0:LRA=9"
         )
     else:
-        # Standard Studio Mastering: Subtle warmth & transparent clarity with broadcast loudness
+        # Standard Studio Mastering: Dry transparent speech with broadcast loudness
         af_chain = (
-            "highpass=f=75,lowpass=f=14500,"
+            "highpass=f=75,"
             "equalizer=f=200:width_type=o:w=1.0:g=1.2,"
             "equalizer=f=3200:width_type=o:w=1.0:g=1.5,"
             "compand=attacks=0.02:decays=0.15:points=-70/-70|-22/-18|0/-1.5:gain=1.2,"
@@ -601,21 +600,24 @@ def generate_speech(
             print(f"[Voice Clone Notice] {e}. Auto-falling back to Edge-TTS ({fallback_voice})...")
             return asyncio.run(generate_speech_async(text, out_path, fallback_voice, rate, pitch))
 
-    # 3. Handle ElevenLabs Engine
-    if engine.lower() in ["elevenlabs", "eleven_labs", "eleven"]:
+    # 3. Handle ElevenLabs Engine (or eleven# prefixed voices)
+    if engine.lower() in ["elevenlabs", "eleven_labs", "eleven"] or str(voice).startswith("eleven#"):
+        actual_eleven_voice = voice.replace("eleven#", "") if str(voice).startswith("eleven#") else voice
+        from config import get_elevenlabs_api_key
+        target_eleven_key = eleven_api_key or get_elevenlabs_api_key()
         try:
             return generate_elevenlabs_speech(
                 text=text,
                 output_path=out_path,
-                voice_id=voice,
-                model_id=eleven_model,
-                api_key=eleven_api_key,
+                voice_id=actual_eleven_voice,
+                model_id=eleven_model or "eleven_multilingual_v2",
+                api_key=target_eleven_key,
                 stability=eleven_stability,
                 similarity_boost=eleven_similarity
             )
         except Exception as e:
-            fallback_voice = "bn-BD-NabanitaNeural" if any('\u0980' <= c <= '\u09ff' for c in text) else "en-US-JennyNeural"
-            print(f"[ElevenLabs Notice] {e}. Auto-falling back to Edge-TTS ({fallback_voice})...")
+            fallback_voice = "bn-BD-PradeepNeural#horror" if any('\u0980' <= c <= '\u09ff' for c in text) else "en-US-ChristopherNeural#horror"
+            print(f"[ElevenLabs Notice] {e}. Auto-falling back to Studio Edge-TTS ({fallback_voice})...")
             return asyncio.run(generate_speech_async(text, out_path, fallback_voice, rate, pitch))
 
     # 4. Default: Edge-TTS

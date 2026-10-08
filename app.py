@@ -646,10 +646,12 @@ with st.sidebar:
     selected_voice_code = filtered_voices[selected_voice_label]
     is_voice_english = selected_voice_code.startswith("en-")
 
-    if "#horror" in selected_voice_code:
-        st.caption("👻 **Horror Storyteller Mode:** ডিপ চেস্ট রেসোনেন্স, হালকা ভুতুড়ে ইকো এবং গভীর রহস্যময় টোন যুক্ত ব্রডকাস্ট মাস্টার্ড অডিও।")
+    if "eleven#" in selected_voice_code:
+        st.caption("💎 👻 **ElevenLabs Studio Horror:** ফিল্ম-কোয়ালিটি ডিপ হলিউড স্টুডিও ভয়েস, কোনো হলরুম বা ইকো নেই—একদম নিখুঁত ডার্ক ভয়েস।")
+    elif "#horror" in selected_voice_code:
+        st.caption("👻 **Horror Storyteller (Dry Studio):** ড্রিমলেস ডিপ চেস্ট রেসোনেন্স, কোনো হলরুম বা ইকো নেই—একদম শান্ত ও গভীর রহস্যময় কণ্ঠ।")
     elif "#educational" in selected_voice_code:
-        st.caption("🎓 **Educational Presenter Mode:** স্ফটিক-স্বচ্ছ উচ্চারণ, কোনো ঝরঝরে আওয়াজ ছাড়া একদম পরিষ্কার ডকুমেন্টারি স্পিচ।")
+        st.caption("🎓 **Educational Presenter (Crystal Clear):** স্ফটিক-স্বচ্ছ উচ্চারণ, কোনো ঝরঝরে আওয়াজ ছাড়া একদম পরিষ্কার ডকুমেন্টারি স্পিচ।")
 
     col_sp1, col_sp2 = st.columns(2)
     with col_sp1:

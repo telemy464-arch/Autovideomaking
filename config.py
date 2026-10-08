@@ -107,9 +107,11 @@ VISUAL_STYLES = {
     }
 }
 
-# Edge-TTS Bengali & English Voices (Studio Tuned & Offline Enhanced)
+# Edge-TTS & Studio Bengali & English Voices (Studio Tuned & Zero-Echo Enhanced)
 VOICES = {
-    "👻 🇧🇩 Horror Storyteller (ভৌতিক ও রহস্যময় গভীর কণ্ঠ - Pradeep Dark)": "bn-BD-PradeepNeural#horror",
+    "💎 👻 ElevenLabs Horror Storyteller (গভীর ভৌতিক কণ্ঠ - George Studio)": "eleven#JBFqnCBsd6RMkjVDRZzb",
+    "💎 👻 ElevenLabs Dark Thriller (অন্ধকার রোমাঞ্চকর কণ্ঠ - Callum Studio)": "eleven#N2lVS1w4EtoT3dr4eOWO",
+    "👻 🇧🇩 Horror Storyteller (ভৌতিক ও রহস্যময় গভীর কণ্ঠ - Pradeep Dark Studio)": "bn-BD-PradeepNeural#horror",
     "🎓 🇧🇩 Educational Presenter (শিক্ষামূলক ও সুস্পষ্ট ডকুমেন্টারি - Nabanita Clear)": "bn-BD-NabanitaNeural#educational",
     "👻 🇺🇸 Horror Storyteller US (Eerie Deep Thriller - Christopher)": "en-US-ChristopherNeural#horror",
     "🎓 🇺🇸 Educational Documentarian US (Clear BBC/National Geo Style - Guy)": "en-US-GuyNeural#educational",
