@@ -199,16 +199,38 @@ async def generate_speech_async(
     """
     Generates speech using Edge-TTS for Bengali and English text.
     Also extracts word/sentence timings for karaoke subtitles.
+    Includes broadcast-grade offline DSP mastering for crystal-clear, deep, noiseless audio.
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    profile = "standard"
+    actual_voice = voice
+    if "#" in voice:
+        actual_voice, profile = voice.split("#", 1)
+
+    # Set profile-optimized acoustic pacing and pitch if user kept defaults
+    effective_rate = rate
+    effective_pitch = pitch
+    if profile == "horror":
+        if rate == "+0%":
+            effective_rate = "-10%"
+        if pitch == "+0Hz":
+            effective_pitch = "-3Hz"
+    elif profile == "educational":
+        if rate == "+0%":
+            effective_rate = "+2%"
+        if pitch == "+0Hz":
+            effective_pitch = "+0Hz"
+
+    temp_raw = output_path.with_suffix(".raw.mp3")
     
-    communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, boundary="WordBoundary")
+    communicate = edge_tts.Communicate(text, actual_voice, rate=effective_rate, pitch=effective_pitch, boundary="WordBoundary")
     
     submaker = edge_tts.SubMaker()
     word_timings = []
     
-    with open(output_path, "wb") as f:
+    with open(temp_raw, "wb") as f:
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 f.write(chunk["data"])
@@ -225,8 +247,65 @@ async def generate_speech_async(
                         "duration": dur_sec
                     })
                 
-    duration = get_audio_duration(output_path)
     srt_content = submaker.get_srt()
+
+    # Studio-Grade Offline DSP Audio Enhancement via FFmpeg
+    # Cleans all harsh artifacts, enhances chest resonance, presence clarity & broadcast loudness
+    ffmpeg_cmd = "ffmpeg"
+    for candidate in [Path(r"D:\Ai By Mizan\bin\ffmpeg.exe"), Path("ffmpeg")]:
+        if candidate.exists() or str(candidate) == "ffmpeg":
+            ffmpeg_cmd = str(candidate)
+            break
+
+    if profile == "horror":
+        # Horror Preset: Deep atmospheric chest resonance, subtle spine-chilling echo, rich warmth
+        af_chain = (
+            "highpass=f=60,lowpass=f=13000,"
+            "equalizer=f=160:width_type=o:w=1.2:g=3.8,"
+            "equalizer=f=3400:width_type=o:w=1.0:g=2.2,"
+            "aecho=0.8:0.65:60|120:0.18|0.08,"
+            "compand=attacks=0.03:decays=0.2:points=-70/-70|-24/-18|0/-1.5:gain=2,"
+            "loudnorm=I=-16:TP=-1.5:LRA=11"
+        )
+    elif profile == "educational":
+        # Educational Preset: Ultra-crisp speech intelligibility, zero mud, presence boost, crystal clarity
+        af_chain = (
+            "highpass=f=90,lowpass=f=14000,"
+            "equalizer=f=250:width_type=o:w=1.0:g=-2.0,"
+            "equalizer=f=2800:width_type=o:w=1.2:g=2.8,"
+            "equalizer=f=5200:width_type=o:w=1.0:g=2.0,"
+            "compand=attacks=0.02:decays=0.15:points=-70/-70|-20/-16|0/-1.2:gain=1.5,"
+            "loudnorm=I=-15:TP=-1.0:LRA=9"
+        )
+    else:
+        # Standard Studio Mastering: Subtle warmth & transparent clarity with broadcast loudness
+        af_chain = (
+            "highpass=f=75,lowpass=f=14500,"
+            "equalizer=f=200:width_type=o:w=1.0:g=1.2,"
+            "equalizer=f=3200:width_type=o:w=1.0:g=1.5,"
+            "compand=attacks=0.02:decays=0.15:points=-70/-70|-22/-18|0/-1.5:gain=1.2,"
+            "loudnorm=I=-16:TP=-1.5:LRA=10"
+        )
+
+    try:
+        cmd_master = [
+            ffmpeg_cmd, "-y",
+            "-i", str(temp_raw),
+            "-af", af_chain,
+            "-b:a", "192k",
+            str(output_path)
+        ]
+        subprocess.run(cmd_master, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        if temp_raw.exists():
+            temp_raw.unlink()
+    except Exception as e_master:
+        # If DSP filtering fails, gracefully keep raw audio without crashing
+        if temp_raw.exists():
+            if output_path.exists():
+                output_path.unlink()
+            temp_raw.rename(output_path)
+
+    duration = get_audio_duration(output_path)
     
     return {
         "audio_path": str(output_path),

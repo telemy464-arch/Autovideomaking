@@ -107,8 +107,12 @@ VISUAL_STYLES = {
     }
 }
 
-# Edge-TTS Bengali & English Voices
+# Edge-TTS Bengali & English Voices (Studio Tuned & Offline Enhanced)
 VOICES = {
+    "👻 🇧🇩 Horror Storyteller (ভৌতিক ও রহস্যময় গভীর কণ্ঠ - Pradeep Dark)": "bn-BD-PradeepNeural#horror",
+    "🎓 🇧🇩 Educational Presenter (শিক্ষামূলক ও সুস্পষ্ট ডকুমেন্টারি - Nabanita Clear)": "bn-BD-NabanitaNeural#educational",
+    "👻 🇺🇸 Horror Storyteller US (Eerie Deep Thriller - Christopher)": "en-US-ChristopherNeural#horror",
+    "🎓 🇺🇸 Educational Documentarian US (Clear BBC/National Geo Style - Guy)": "en-US-GuyNeural#educational",
     "🇧🇩 Bengali - Nabanita (Female)": "bn-BD-NabanitaNeural",
     "🇧🇩 Bengali - Pradeep (Male)": "bn-BD-PradeepNeural",
     "🇮🇳 Bengali - Tanisha (Female)": "bn-IN-TanishaaNeural",

@@ -626,17 +626,30 @@ with st.sidebar:
     eleven_stability = 0.5
     eleven_similarity = 0.75
 
-    voice_filter = st.radio("Voice Language Filter:", ["All Voices", "🇧🇩 Bengali", "🇺🇸/🇬🇧 English"], horizontal=True)
-    if voice_filter == "🇧🇩 Bengali":
-        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("bn-")}
+    voice_filter = st.radio(
+        "Voice Character & Language Filter:",
+        ["All Voices", "👻 Horror Stories", "🎓 Educational", "🇧🇩 Bengali", "🇺🇸/🇬🇧 English"],
+        horizontal=True
+    )
+    if voice_filter == "👻 Horror Stories":
+        filtered_voices = {k: v for k, v in config.VOICES.items() if "Horror" in k}
+    elif voice_filter == "🎓 Educational":
+        filtered_voices = {k: v for k, v in config.VOICES.items() if "Educational" in k}
+    elif voice_filter == "🇧🇩 Bengali":
+        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("bn-") or "🇧🇩" in k}
     elif voice_filter == "🇺🇸/🇬🇧 English":
-        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("en-")}
+        filtered_voices = {k: v for k, v in config.VOICES.items() if v.startswith("en-") or "🇺🇸" in k or "🇬🇧" in k}
     else:
         filtered_voices = config.VOICES
 
     selected_voice_label = st.selectbox("Select Voice:", options=list(filtered_voices.keys()), index=0)
     selected_voice_code = filtered_voices[selected_voice_label]
     is_voice_english = selected_voice_code.startswith("en-")
+
+    if "#horror" in selected_voice_code:
+        st.caption("👻 **Horror Storyteller Mode:** ডিপ চেস্ট রেসোনেন্স, হালকা ভুতুড়ে ইকো এবং গভীর রহস্যময় টোন যুক্ত ব্রডকাস্ট মাস্টার্ড অডিও।")
+    elif "#educational" in selected_voice_code:
+        st.caption("🎓 **Educational Presenter Mode:** স্ফটিক-স্বচ্ছ উচ্চারণ, কোনো ঝরঝরে আওয়াজ ছাড়া একদম পরিষ্কার ডকুমেন্টারি স্পিচ।")
 
     col_sp1, col_sp2 = st.columns(2)
     with col_sp1:
