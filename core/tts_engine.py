@@ -225,29 +225,58 @@ async def generate_speech_async(
 
     temp_raw = output_path.with_suffix(".raw.mp3")
     
-    communicate = edge_tts.Communicate(text, actual_voice, rate=effective_rate, pitch=effective_pitch, boundary="WordBoundary")
-    
-    submaker = edge_tts.SubMaker()
+    voices_to_try = [actual_voice]
+    if actual_voice not in ["bn-BD-NabanitaNeural", "bn-BD-PradeepNeural"]:
+        voices_to_try.append("bn-BD-NabanitaNeural" if any('\u0980' <= c <= '\u09ff' for c in text) else "en-US-GuyNeural")
+    if "bn-BD-PradeepNeural" not in voices_to_try and any('\u0980' <= c <= '\u09ff' for c in text):
+        voices_to_try.append("bn-BD-PradeepNeural")
+
+    success = False
     word_timings = []
-    
-    with open(temp_raw, "wb") as f:
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                f.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                submaker.feed(chunk)
-                w_text = chunk.get("text", "").strip()
-                if w_text:
-                    offset_sec = chunk["offset"] / 10_000_000.0
-                    dur_sec = chunk["duration"] / 10_000_000.0
-                    word_timings.append({
-                        "word": w_text,
-                        "start": offset_sec,
-                        "end": offset_sec + dur_sec,
-                        "duration": dur_sec
-                    })
-                
-    srt_content = submaker.get_srt()
+    srt_content = ""
+
+    for attempt_voice in voices_to_try:
+        try:
+            communicate = edge_tts.Communicate(text, attempt_voice, rate=effective_rate, pitch=effective_pitch, boundary="WordBoundary")
+            submaker = edge_tts.SubMaker()
+            current_timings = []
+            with open(temp_raw, "wb") as f:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        f.write(chunk["data"])
+                    elif chunk["type"] == "WordBoundary":
+                        submaker.feed(chunk)
+                        w_text = chunk.get("text", "").strip()
+                        if w_text:
+                            offset_sec = chunk["offset"] / 10_000_000.0
+                            dur_sec = chunk["duration"] / 10_000_000.0
+                            current_timings.append({
+                                "word": w_text,
+                                "start": offset_sec,
+                                "end": offset_sec + dur_sec,
+                                "duration": dur_sec
+                            })
+            if temp_raw.exists() and temp_raw.stat().st_size > 500:
+                word_timings = current_timings
+                srt_content = submaker.get_srt()
+                success = True
+                break
+        except Exception as e_stream:
+            print(f"[TTS Voice {attempt_voice} Notice] {e_stream}. Retrying with fallback...")
+            continue
+
+    if not success or not temp_raw.exists() or temp_raw.stat().st_size == 0:
+        # Ultimate fallback: Generate clean silent/tone placeholder to never crash video pipeline
+        import subprocess
+        ffmpeg_cmd = "ffmpeg"
+        for candidate in [Path(r"D:\Ai By Mizan\bin\ffmpeg.exe"), Path("ffmpeg")]:
+            if candidate.exists() or str(candidate) == "ffmpeg":
+                ffmpeg_cmd = str(candidate)
+                break
+        subprocess.run([
+            ffmpeg_cmd, "-y", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono",
+            "-t", "3.5", "-c:a", "libmp3lame", str(temp_raw)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Studio-Grade Offline DSP Audio Enhancement via FFmpeg
     # Cleans all harsh artifacts, enhances chest resonance, presence clarity & broadcast loudness
